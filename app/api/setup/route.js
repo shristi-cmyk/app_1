@@ -13,7 +13,7 @@ export async function POST(req) {
   try {
     // The template's placeholders, as the Docs action itself lists them (option values are used verbatim as keys).
     const tagOptions = await listOptions(UID, IDS.docsFromTemplate, 'tags', { template_id: templateId }, s.auth.docs)
-    const missing = FIELDS.filter((c) => !tagOptions.some((o) => `${o.label} ${o.value}`.toLowerCase().includes(c)))
+    const missing = FIELDS.filter((c) => !tagOptions.some((o) => `${o.label} ${o.key ?? o.value}`.toLowerCase().includes(c)))
     if (missing.length) {
       return Response.json({ error: `The template has no placeholder for: ${missing.join(', ')}. Found: ${tagOptions.map((o) => o.label).join(', ') || 'none'}` }, { status: 400 })
     }
