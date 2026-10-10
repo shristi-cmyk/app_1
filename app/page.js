@@ -88,7 +88,7 @@ export default function Home() {
   async function save() {
     setMessage('Saving…')
     try {
-      await getJson('/api/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      await getJson('/api/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, labels: { spreadsheet: labelOf(spreadsheets, form.spreadsheetId), tab: labelOf(tabs, form.sheetId), template: labelOf(templates, form.templateId) } }) })
       setMessage('Saved. New rows in the sheet will now be emailed as PDF invoices.')
       refresh()
     } catch (e) { setMessage(e.message) }
@@ -102,6 +102,7 @@ export default function Home() {
     } catch (e) { setMessage(e.message) }
   }
 
+  const labelOf = (list, v) => (list.find((o) => o.value === v) || {}).label || ''
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
   const select = (label, key, options, disabled) => (
     <label style={{ display: 'block', marginBottom: 12 }}>
@@ -125,10 +126,29 @@ export default function Home() {
           <button key={a.key} onClick={() => connect(a)} disabled={status.connected[a.key]}
             style={{ ...button, background: status.connected[a.key] ? '#2e8b57' : '#fff', color: status.connected[a.key] ? '#fff' : '#1a1d21', border: '1px solid #ccd', marginRight: 8, marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <img src={a.icon} alt="" width={20} height={20} />
-            {status.connected[a.key] ? `${a.name} connected` : `Connect ${a.name}`}
+            {status.connected[a.key] ? `${a.name} connected${status.accounts?.[a.key] ? ' · ' + status.accounts[a.key] : ''}` : `Connect ${a.name}`}
           </button>
         ))}
       </section>
+
+      {status.active && (
+        <section style={{ ...card, borderLeft: '4px solid #2e8b57' }}>
+          <h2>Running now</h2>
+          <table style={{ borderCollapse: 'collapse' }}><tbody>
+            {[
+              ['Watching sheet', status.active.labels?.spreadsheet || status.active.spreadsheetId],
+              ['Tab', status.active.labels?.tab || status.active.sheetId],
+              ['Invoice template', status.active.labels?.template || status.active.templateId],
+              ['Sent from', status.accounts?.gmail || 'your Gmail'],
+              ['Email subject', status.active.subject],
+              ['Started', status.active.createdAt && new Date(status.active.createdAt).toLocaleString()]
+            ].map(([k, v]) => (
+              <tr key={k}><td style={{ padding: '4px 16px 4px 0', color: '#555', verticalAlign: 'top' }}>{k}</td><td style={{ padding: '4px 0' }}>{v}</td></tr>
+            ))}
+          </tbody></table>
+          <p style={{ fontSize: 13, color: '#555', marginBottom: 0 }}>Each new row is emailed to the address in its <code>buyer_email</code> column.</p>
+        </section>
+      )}
 
       <section style={{ ...card, opacity: allConnected ? 1 : 0.5 }}>
         <h2>2. Choose your sheet and template</h2>
