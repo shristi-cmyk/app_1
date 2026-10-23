@@ -1,0 +1,30 @@
+{
+  "name": "partnership-deck-manager",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shristi-cmyk/app_1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shristi-cmyk/app_1/issues"
+  },
+  "homepage": "https://github.com/shristi-cmyk/app_1#readme",
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "pptxgenjs": "^4.0.1",
+    "sharp": "^0.35.5",
+    "viasocket-apps": "^0.7.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}

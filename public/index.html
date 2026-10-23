@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partnership Deck Manager</title>
+<style>
+  :root { --bg:#fafafa; --card:#fff; --ink:#0b0b0c; --mute:#71717a; --line:#e4e4e7; --accent:#0b0b0c; --warn:#b45309; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0b0b0c; --card:#18181b; --ink:#fafafa; --mute:#a1a1aa; --line:#3f3f46; --accent:#fafafa; --warn:#fbbf24; } }
+  * { box-sizing: border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui, sans-serif }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 64px }
+  h1 { font-size:24px; margin:0 0 4px } p.sub { color:var(--mute); margin:0 0 24px }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px }
+  h2 { font-size:16px; margin:0 0 12px }
+  label { display:block; font-size:13px; color:var(--mute); margin:8px 0 2px }
+  input, select, textarea, button { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink); width:100% }
+  button { width:auto; cursor:pointer; background:var(--accent); color:var(--bg); border:0; font-weight:600; margin-top:12px }
+  button.ghost { background:transparent; color:var(--ink); border:1px solid var(--line) }
+  .row { display:flex; gap:8px; flex-wrap:wrap } .row > * { flex:1 1 140px }
+  .msg { white-space:pre-wrap; margin:8px 0 0 } .warn { color:var(--warn) }
+  a { color:inherit }
+  #chatlog p { margin:6px 0 } #chatlog .me { color:var(--mute) }
+</style>
+</head>
+<body>
+<main>
+  <h1>Partnership Deck Manager</h1>
+  <p class="sub">Customised viaSocket pitch decks for partners. It crawls for their icons and asks you when it can't find one.</p>
+
+  <section>
+    <h2>Build a deck</h2>
+    <label>Existing partner deck</label>
+    <select id="preset"><option value="">New partner…</option></select>
+    <div id="newPartner">
+      <div class="row">
+        <div><label>Partner name</label><input id="name" placeholder="Acme"></div>
+        <div><label>Website domain</label><input id="domain" placeholder="acme.com"></div>
+        <div><label>Brand colour</label><input id="color" type="color" value="#7c3aed"></div>
+      </div>
+      <label>What they do and the pitch angle (the AI drafts the content from this)</label>
+      <textarea id="context" rows="2" placeholder="WhatsApp commerce platform; their agents can't reach customers' CRMs"></textarea>
+    </div>
+    <button id="build">Build deck</button>
+    <div id="deckOut" class="msg"></div>
+    <div id="iconAsk"></div>
+  </section>
+
+  <section id="deliver" hidden>
+    <h2>Send it through one of your apps</h2>
+    <div class="row"><input id="appq" placeholder="Search an app, e.g. Gmail or Slack"><button class="ghost" id="appsearch" style="margin:0;flex:0 0 auto">Search</button></div>
+    <div id="apps"></div>
+    <div id="plan"></div>
+    <div id="sendOut" class="msg"></div>
+  </section>
+
+  <section>
+    <h2>Chat with the agent</h2>
+    <div id="chatlog"></div>
+    <div class="row"><input id="chatin" placeholder="Build a deck for Wati (wati.io)"><button id="chatsend" style="margin:0;flex:0 0 auto">Send</button></div>
+  </section>
+</main>
+
+<script type="module">
+import { connect } from 'https://esm.sh/viasocket-apps@0.7.0/browser'
+
+const $ = (id) => document.getElementById(id)
+const api = async (path, body) => {
+  const r = await fetch(path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : undefined)
+  const j = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(j.error ?? r.statusText)
+  return j
+}
+const text = (el, t) => { el.textContent = t }
+let deck = null
+let threadId = 'chat-' + Math.random().toString(36).slice(2, 10)
+
+for (const p of await api('/api/presets')) $('preset').add(new Option(p, p))
+$('preset').onchange = () => { $('newPartner').hidden = !!$('preset').value }
+
+async function build() {
+  text($('deckOut'), 'Building…'); $('iconAsk').replaceChildren()
+  const preset = $('preset').value
+  const body = preset ? { preset } : { partner: { name: $('name').value, domain: $('domain').value, color: $('color').value }, context: $('context').value, useAi: !!$('context').value }
+  try {
+    const out = await api('/api/deck', body)
+    if (out.status === 'needs_icons') return askIcons(out.missing)
+    deck = out
+    const links = Object.entries(out.files).map(([k, u]) => `<a href="${u}">Download .${k}</a>`).join(' · ')
+    $('deckOut').innerHTML = links
+    if (out.reviewBeforeSending.length) $('deckOut').innerHTML += `<div class="warn">${out.reviewBeforeSending.join('<br>')}</div>`
+    $('deliver').hidden = false
+  } catch (e) { text($('deckOut'), e.message) }
+}
+$('build').onclick = build
+
+function askIcons(missing) {
+  text($('deckOut'), "I couldn't find these icons. Give me a URL for each, then build again.")
+  for (const m of missing) {
+    const row = document.createElement('div'); row.className = 'row'
+    row.innerHTML = `<label style="flex:1 1 100%">${m.kind}: ${m.name} (${m.hint})</label><input placeholder="https://…/logo.png"><button class="ghost" style="margin:0">Use this</button>`
+    row.querySelector('button').onclick = async () => {
+      try { await api('/api/icons', { name: m.name, url: row.querySelector('input').value }); row.remove(); if (!$('iconAsk').children.length) build() } catch (e) { alert(e.message) }
+    }
+    $('iconAsk').append(row)
+  }
+}
+
+$('appsearch').onclick = async () => {
+  const apps = await api('/api/viasocket/apps?q=' + encodeURIComponent($('appq').value))
+  $('apps').replaceChildren(...apps.slice(0, 6).map((a) => {
+    const b = document.createElement('button'); b.className = 'ghost'; b.textContent = a.name; b.onclick = () => pick(a); return b
+  }))
+}
+
+async function pick(app) {
+  text($('sendOut'), `Connecting ${app.name}…`)
+  try {
+    const { embedToken } = await api('/api/viasocket/token')
+    const { authId } = await connect({ embedToken, serviceId: app.serviceId, skipActionSelection: true })
+    await api('/api/viasocket/enable', { serviceId: app.serviceId, authId })
+    const plan = await api(`/api/viasocket/plan?serviceId=${app.serviceId}&authId=${authId}`)
+    if (plan.error) return text($('sendOut'), `${plan.error}. Actions: ${(plan.available ?? []).join(', ')}`)
+    text($('sendOut'), `Action: ${plan.action.name}`)
+    renderPlan(app, plan)
+  } catch (e) { text($('sendOut'), e.message) }
+}
+
+function renderPlan(app, plan) {
+  const box = $('plan'); box.replaceChildren()
+  const inputs = {}
+  for (const f of plan.fields) {
+    if (f.role === 'subject' || f.role === 'body') continue
+    const wrap = document.createElement('div')
+    wrap.innerHTML = `<label>${f.label}${f.required ? ' *' : ''}</label>`
+    const el = f.options ? document.createElement('select') : document.createElement('input')
+    if (f.options) for (const o of f.options) el.add(new Option(o.label, o.value))
+    inputs[f.key] = el; wrap.append(el); box.append(wrap)
+  }
+  const go = document.createElement('button'); go.textContent = 'Send deck'
+  go.onclick = async () => {
+    const inputData = Object.fromEntries(Object.entries(inputs).map(([k, el]) => [k, el.value]))
+    for (const f of plan.fields) {
+      if (f.role === 'subject') inputData[f.key] = '{{deck_name}}'
+      if (f.role === 'body') inputData[f.key] = 'Here is the partnership deck: {{deck_link}}'
+    }
+    try { const r = await api('/api/viasocket/send', { serviceId: app.serviceId, versionId: plan.action.versionId, deckId: deck.id, inputData }); text($('sendOut'), 'Sent.\n' + JSON.stringify(r).slice(0, 300)) } catch (e) { text($('sendOut'), e.message) }
+  }
+  box.append(go)
+}
+
+$('chatsend').onclick = async () => {
+  const message = $('chatin').value; if (!message) return
+  $('chatin').value = ''
+  const me = document.createElement('p'); me.className = 'me'; me.textContent = message; $('chatlog').append(me)
+  try {
+    const r = await api('/api/chat', { message, threadId })
+    const p = document.createElement('p'); p.textContent = typeof r.content === 'string' ? r.content : JSON.stringify(r.content); $('chatlog').append(p)
+  } catch (e) { const p = document.createElement('p'); p.className = 'warn'; p.textContent = e.message; $('chatlog').append(p) }
+}
+</script>
+</body>
+</html>
