@@ -29,7 +29,20 @@
   <p class="sub">Customised viaSocket pitch decks for partners. It crawls for their icons and asks you when it can't find one.</p>
 
   <section>
-    <h2>Build a deck</h2>
+    <h2>Partner deck (animated, 5 slides)</h2>
+    <div class="row">
+      <div><label>Application name</label><input id="appName" placeholder="AiSensy"></div>
+      <div><label>Website (optional)</label><input id="appDomain" placeholder="aisensy.com"></div>
+    </div>
+    <label>Pitch angle (optional)</label>
+    <input id="appContext" placeholder="Their AI agents can't act in customers' apps">
+    <button id="buildLink">Build and get link</button>
+    <div id="linkOut" class="msg"></div>
+    <div id="needAsk"></div>
+  </section>
+
+  <section>
+    <h2>PowerPoint deck (7 slides)</h2>
     <label>Existing partner deck</label>
     <select id="preset"><option value="">New partner…</option></select>
     <div id="newPartner">
@@ -57,7 +70,7 @@
   <section>
     <h2>Chat with the agent</h2>
     <div id="chatlog"></div>
-    <div class="row"><input id="chatin" placeholder="Build a deck for Wati (wati.io)"><button id="chatsend" style="margin:0;flex:0 0 auto">Send</button></div>
+    <div class="row"><input id="chatin" placeholder="Build a deck for Wati"><button id="chatsend" style="margin:0;flex:0 0 auto">Send</button></div>
   </section>
 </main>
 
@@ -147,6 +160,43 @@ function renderPlan(app, plan) {
     try { const r = await api('/api/viasocket/send', { serviceId: app.serviceId, versionId: plan.action.versionId, deckId: deck.id, inputData }); text($('sendOut'), 'Sent.\n' + JSON.stringify(r).slice(0, 300)) } catch (e) { text($('sendOut'), e.message) }
   }
   box.append(go)
+}
+
+const extra = {}
+async function buildLink() {
+  const name = $('appName').value.trim(); if (!name) return
+  text($('linkOut'), 'Researching ' + name + ': logo, colour, use case, product snapshot…'); $('needAsk').replaceChildren()
+  try {
+    const out = await api('/api/partner-deck', { name, domain: $('appDomain').value.trim() || undefined, context: $('appContext').value.trim() || undefined, ...extra })
+    if (out.status === 'needs_input') return askNeeds(name, out.missing)
+    const url = new URL(out.url, location.href).href
+    $('linkOut').innerHTML = ''
+    const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.textContent = url
+    const copy = document.createElement('button'); copy.className = 'ghost'; copy.textContent = 'Copy link'; copy.onclick = () => navigator.clipboard.writeText(url)
+    $('linkOut').append('Share this link: ', a, document.createElement('br'), copy)
+    const src = document.createElement('div'); src.style.color = 'var(--mute)'; src.textContent = Object.entries(out.sources).map(([k, v]) => k + ': ' + v).join(' · '); $('linkOut').append(src)
+  } catch (e) { text($('linkOut'), e.message) }
+}
+$('buildLink').onclick = buildLink
+
+function askNeeds(name, missing) {
+  text($('linkOut'), "I couldn't find these. Fill them in, then I'll build again.")
+  for (const m of missing) {
+    const row = document.createElement('div'); row.className = 'row'
+    const label = document.createElement('label'); label.style.flex = '1 1 100%'; label.textContent = m.hint
+    const input = document.createElement('input'); input.placeholder = m.field === 'color' ? '#07CF65' : 'https://…'
+    const ok = document.createElement('button'); ok.className = 'ghost'; ok.style.margin = '0'; ok.textContent = 'Use this'
+    ok.onclick = async () => {
+      try {
+        if (m.field === 'color') extra.color = input.value.trim()
+        else await api('/api/assets', { name: m.name, field: m.field, url: input.value.trim() })
+        row.remove(); if (!$('needAsk').children.length) buildLink()
+      } catch (e) { alert(e.message) }
+    }
+    row.append(label, input, ok)
+    if (m.field === 'screenshot') { const skip = document.createElement('button'); skip.className = 'ghost'; skip.style.margin = '0'; skip.textContent = 'Skip'; skip.onclick = () => { extra.skipScreenshot = true; row.remove(); if (!$('needAsk').children.length) buildLink() }; row.append(skip) }
+    $('needAsk').append(row)
+  }
 }
 
 $('chatsend').onclick = async () => {

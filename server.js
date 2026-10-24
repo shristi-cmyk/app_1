@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { generate, decks } from './src/generate.js'
 import * as icons from './src/icons.js'
 import { PRESETS } from './src/briefs.js'
+import { research, supplyScreenshot } from './src/research.js'
+import { renderHtmlDeck } from './src/htmldeck.js'
 import { viasocket, planDelivery, runDelivery, ViaSocketError } from './src/viasocket.js'
 
 const app = express()
@@ -48,6 +50,36 @@ app.get('/decks/:id/:file', (req, res) => {
   res.type(ext === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation').send(d[ext])
 })
 
+// ---------- animated 5-slide HTML decks: application name in, shareable link out ----------
+const htmlDecks = new Map() // memory storage: lost on restart
+const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+async function partnerDeck(input, uid) {
+  if (!input?.name) throw new Error('name (the application name) is required')
+  const r = await research({ ...input, uid })
+  if (r.missing) return { status: 'needs_input', missing: r.missing, found: r.found }
+  const id = `${slugify(input.name)}-${randomUUID().slice(0, 6)}`
+  htmlDecks.set(id, await renderHtmlDeck(r.brief, r.assets))
+  return { status: 'ready', url: `${PUBLIC_URL}/p/${id}`, sources: r.sources }
+}
+
+app.post('/api/partner-deck', wrap(async (req, res) => res.json(await partnerDeck(req.body, req.uid))))
+
+app.post('/api/assets', wrap(async (req, res) => {
+  const { name, field, url, base64, mime } = req.body
+  if (!name || !(url || base64)) throw new Error('name and a url or base64 image are required')
+  if (field === 'screenshot') await supplyScreenshot(name, { url, base64 })
+  else if (url) await icons.supplyFromUrl(name, url)
+  else icons.supply(name, base64, mime)
+  res.json({ ok: true })
+}))
+
+app.get('/p/:id', (req, res) => {
+  const html = htmlDecks.get(req.params.id)
+  if (!html) return res.status(404).send('This deck is no longer stored here. Build it again.')
+  res.type('html').send(html)
+})
+
 // ---------- viaSocket: deliver a deck through the user's own app ----------
 app.get('/api/viasocket/token', wrap(async (req, res) => res.json({ embedToken: await viasocket().user(req.uid).token() })))
 
@@ -79,25 +111,30 @@ app.post('/api/chat', wrap(async (req, res) => {
   const reply = await viasocket().user(req.uid).ai.send({
     threadId: req.body.threadId,
     message: req.body.message,
-    prompt: `You are Partnership Deck Manager, which builds customised viaSocket pitch decks for partners.
-Use generate_deck when the user names a partner. Ask for the partner's website domain and brand colour if you don't have them.
-If generate_deck returns status needs_icons, ask the user for the missing icons (a logo URL or image) and do not guess.
-When it returns ready, give the user the file links.`,
+    prompt: `You are Partnership Deck Manager. Given an application name, you build an animated 5-slide viaSocket partnership deck and return its shareable link.
+Call partner_deck with the application name (and its domain or brand colour if the user gave them).
+If it returns needs_input, ask the user for exactly the missing items (logo URL, brand colour, product screenshot) and never guess them.
+When it returns ready, reply with the link.`,
     tools: [{
-      name: 'generate_deck',
-      description: 'Build the seven-slide viaSocket pitch deck for a partner. Returns file links or the icons that are missing.',
-      url: `${PUBLIC_URL}/tools/generate_deck`,
+      name: 'partner_deck',
+      description: 'Research an application (logo, brand colour, use case, product snapshot) and build its animated 5-slide viaSocket pitch deck. Returns the link or what is missing.',
+      url: `${PUBLIC_URL}/tools/partner_deck`,
       headers: { Authorization: `Bearer ${TOOL_KEY}`, 'X-User': req.uid },
       fields: {
-        name: { type: 'string', description: 'Partner name, e.g. AiSensy' },
-        domain: { type: 'string', description: 'Partner website domain, e.g. aisensy.com' },
-        color: { type: 'string', description: 'Partner brand colour as hex, e.g. #07CF65' },
-        context: { type: 'string', description: 'What the partner does and the pitch angle' }
+        name: { type: 'string', description: 'Application name, e.g. AiSensy' },
+        domain: { type: 'string', description: 'Website domain if known, e.g. aisensy.com' },
+        color: { type: 'string', description: 'Brand colour as hex if the user gave one' },
+        context: { type: 'string', description: 'Anything the user said about the pitch angle' }
       },
-      requiredParams: ['name', 'domain']
+      requiredParams: ['name']
     }]
   })
   res.json(reply)
+}))
+
+app.post('/tools/partner_deck', wrap(async (req, res) => {
+  if (req.headers.authorization !== `Bearer ${TOOL_KEY}`) return res.sendStatus(401)
+  res.json(await partnerDeck(req.body, req.headers['x-user']))
 }))
 
 app.post('/tools/generate_deck', wrap(async (req, res) => {
@@ -117,7 +154,8 @@ app.get('/.well-known/agent.json', (_req, res) => res.json({
   description: 'Builds customised viaSocket pitch decks for partners, crawling for their icons and asking when one cannot be found.',
   url: PUBLIC_URL,
   skills: [
-    { id: 'generate_deck', description: 'Build a partner deck', input: { preset: 'string?', partner: '{name, domain, color}?', context: 'string?' } },
+    { id: 'partner_deck', description: 'Application name in, link to an animated 5-slide pitch deck out', input: { name: 'string', domain: 'string?', color: 'string?', context: 'string?' } },
+    { id: 'generate_deck', description: 'Build a 7-slide .pptx partner deck', input: { preset: 'string?', partner: '{name, domain, color}?', context: 'string?' } },
     { id: 'supply_icon', description: 'Provide a missing icon', input: { name: 'string', url: 'string' } }
   ]
 }))
@@ -129,6 +167,7 @@ app.post('/a2a/tasks', wrap(async (req, res) => {
     if (out.files) for (const k of Object.keys(out.files)) out.files[k] = PUBLIC_URL + out.files[k]
     return res.json(out)
   }
+  if (skill === 'partner_deck') return res.json(await partnerDeck(input, `agent-${from ?? 'peer'}`))
   if (skill === 'supply_icon') { await icons.supplyFromUrl(input.name, input.url); return res.json({ ok: true }) }
   throw new Error(`Unknown skill "${skill}"`)
 }))
