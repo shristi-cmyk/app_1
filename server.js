@@ -2,6 +2,8 @@ import 'dotenv/config'
 import express from 'express'
 import { randomUUID, randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { generate, decks } from './src/generate.js'
 import * as icons from './src/icons.js'
 import { PRESETS } from './src/briefs.js'
@@ -13,7 +15,7 @@ const app = express()
 app.use(express.json({ limit: '8mb' }))
 app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))))
 
-const PUBLIC_URL = process.env.PUBLIC_URL ?? ''
+const PUBLIC_URL = process.env.PUBLIC_URL ?? (process.env.APP_NAME ? `https://${process.env.APP_NAME}.embarko.app` : '')
 const TOOL_KEY = process.env.TOOL_KEY ?? randomBytes(16).toString('hex')
 
 // One id per end user, forever: a cookie here; swap for your auth user id if you add sign-in.
@@ -51,7 +53,15 @@ app.get('/decks/:id/:file', (req, res) => {
 })
 
 // ---------- animated 5-slide HTML decks: application name in, shareable link out ----------
-const htmlDecks = new Map() // memory storage: lost on restart
+// Deck pages are kept in memory and, on Embarko, as files under DATA_DIR so shared links survive restarts.
+const htmlDecks = new Map()
+const DECK_DIR = process.env.DATA_DIR ? join(process.env.DATA_DIR, 'decks') : null
+if (DECK_DIR) mkdirSync(DECK_DIR, { recursive: true })
+const loadDeck = (id) => {
+  if (htmlDecks.has(id)) return htmlDecks.get(id)
+  if (!DECK_DIR || !/^[a-z0-9-]+$/.test(id)) return null
+  try { return readFileSync(join(DECK_DIR, `${id}.html`), 'utf8') } catch { return null }
+}
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 async function partnerDeck(input, uid) {
@@ -59,7 +69,9 @@ async function partnerDeck(input, uid) {
   const r = await research({ ...input, uid })
   if (r.missing) return { status: 'needs_input', missing: r.missing, found: r.found }
   const id = `${slugify(input.name)}-${randomUUID().slice(0, 6)}`
-  htmlDecks.set(id, await renderHtmlDeck(r.brief, r.assets))
+  const html = await renderHtmlDeck(r.brief, r.assets)
+  htmlDecks.set(id, html)
+  if (DECK_DIR) writeFileSync(join(DECK_DIR, `${id}.html`), html)
   return { status: 'ready', url: `${PUBLIC_URL}/p/${id}`, sources: r.sources }
 }
 
@@ -75,7 +87,7 @@ app.post('/api/assets', wrap(async (req, res) => {
 }))
 
 app.get('/p/:id', (req, res) => {
-  const html = htmlDecks.get(req.params.id)
+  const html = loadDeck(req.params.id)
   if (!html) return res.status(404).send('This deck is no longer stored here. Build it again.')
   res.type('html').send(html)
 })
@@ -194,4 +206,4 @@ app.get('/a2a/peers/:name/card', wrap(async (req, res) => {
   res.status(r.status).type('json').send(await r.text())
 }))
 
-app.listen(process.env.PORT ?? 3000, () => console.log(`Partnership Deck Manager on :${process.env.PORT ?? 3000}`))
+app.listen(Number(process.env.PORT ?? 3000), '0.0.0.0', () => console.log(`Partnership Deck Manager on :${process.env.PORT ?? 3000}`))
