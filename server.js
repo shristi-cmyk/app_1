@@ -85,11 +85,16 @@ app.post('/api/assets', wrap(async (req, res) => {
   res.json({ ok: true })
 }))
 
-app.get('/p/:id', (req, res) => {
+app.get('/p/:id', wrap(async (req, res) => {
+  // Preset partners have a fixed link (/p/aisensy) that is built on first request.
+  if (req.params.id === 'aisensy' && !loadDeck('aisensy')) {
+    const r = await research({ name: 'AiSensy', uid: 'preset' })
+    if (!r.missing) htmlDecks.set('aisensy', await renderHtmlDeck(r.brief, r.assets))
+  }
   const html = loadDeck(req.params.id)
   if (!html) return res.status(404).send('This deck is no longer stored here. Build it again.')
   res.type('html').send(html)
-})
+}))
 
 // ---------- viaSocket: deliver a deck through the user's own app ----------
 app.get('/api/viasocket/token', wrap(async (req, res) => res.json({ embedToken: await viasocket().user(req.uid).token() })))
