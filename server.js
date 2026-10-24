@@ -7,7 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { generate, decks } from './src/generate.js'
 import * as icons from './src/icons.js'
 import { PRESETS } from './src/briefs.js'
-import { research, supplyScreenshot } from './src/research.js'
+import { research } from './src/research.js'
 import { renderHtmlDeck } from './src/htmldeck.js'
 import { viasocket, planDelivery, runDelivery, ViaSocketError } from './src/viasocket.js'
 
@@ -80,8 +80,7 @@ app.post('/api/partner-deck', wrap(async (req, res) => res.json(await partnerDec
 app.post('/api/assets', wrap(async (req, res) => {
   const { name, field, url, base64, mime } = req.body
   if (!name || !(url || base64)) throw new Error('name and a url or base64 image are required')
-  if (field === 'screenshot') await supplyScreenshot(name, { url, base64 })
-  else if (url) await icons.supplyFromUrl(name, url)
+  if (url) await icons.supplyFromUrl(name, url)
   else icons.supply(name, base64, mime)
   res.json({ ok: true })
 }))
@@ -125,11 +124,11 @@ app.post('/api/chat', wrap(async (req, res) => {
     message: req.body.message,
     prompt: `You are Partnership Deck Manager. Given an application name, you build an animated 5-slide viaSocket partnership deck and return its shareable link.
 Call partner_deck with the application name (and its domain or brand colour if the user gave them).
-If it returns needs_input, ask the user for exactly the missing items (logo URL, brand colour, product screenshot) and never guess them.
+If it returns needs_input, ask the user for exactly the missing items (logo URL, brand colour) and never guess them.
 When it returns ready, reply with the link.`,
     tools: [{
       name: 'partner_deck',
-      description: 'Research an application (logo, brand colour, use case, product snapshot) and build its animated 5-slide viaSocket pitch deck. Returns the link or what is missing.',
+      description: 'Research an application (logo, brand colour, use case) and build its animated 5-slide viaSocket pitch deck. Returns the link or what is missing.',
       url: `${PUBLIC_URL}/tools/partner_deck`,
       headers: { Authorization: `Bearer ${TOOL_KEY}`, 'X-User': req.uid },
       fields: {
