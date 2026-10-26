@@ -1,16 +1,13 @@
 # Partnership Deck Manager
 
-**Main flow:** give it an application name, get back a link to an animated 5-slide HTML pitch deck (modelled on `viaSocket_x_AiSensy_v3`): `POST /api/partner-deck {name, domain?, color?, context?}` → `{status:'ready', url}` or `{status:'needs_input', missing}`. Decks are served at `/p/:id`.
+Application name in, shareable link to an animated 5-slide viaSocket partnership deck out (the design of `viaSocket_x_AiSensy_final`).
 
-It finds the logo (site crawl, then viaSocket's catalog icon), the brand colour (theme-color or the logo's dominant colour), a snapshot of the product UI (headless Chromium, else og:image) and the use case (viaSocket AI reads the site). Anything it can't find is asked for, never guessed. Presenter keys: → / Space next, ← back, N notes, F full screen, `#s1`–`#s5` deep links.
+`POST /api/partner-deck {name, domain?, color?, context?}` → `{status:'ready', url, sources}` or `{status:'needs_input', missing}`. Decks are served at `/p/:id`; AiSensy has a fixed link, `/p/aisensy`.
 
+What it does for a partner:
+1. Finds the site (given, or name.com/.ai/.io/.in/.co) and crawls the homepage plus up to 8 relevant pages (product, integrations, use cases, pricing…) from its links and sitemap.
+2. Finds the logo (site icons, then viaSocket's catalog icon) and the brand colour (theme-color, then the logo's main colour).
+3. Sends the crawled text and the apps the site mentions to viaSocket's AI, which writes the slide content in the AiSensy deck's shape. If that fails, a generic template is used and the response says so (`sources.aiTailored: false`).
+4. Asks for anything it cannot find (logo, colour, or a description when the site has no readable text).
 
-Builds customised viaSocket partner pitch decks (seven slides, `.pptx` plus `.pdf` when LibreOffice is present), following `viasocket_partner_decks_final.md`.
-
-- **Icons:** crawls the partner's site for a logo and uses the open Simple Icons set for brand marks. If it finds nothing it returns `needs_icons` and asks for a URL, never a placeholder.
-- **Content:** presets `aisensy` and `bolna`; new partners start from a template and, when a pitch angle is given, the viaSocket AI drafts the brief per run.
-- **Delivery:** the user connects an app (Gmail, Slack…) through viaSocket and sends the deck link; the send action is read from the live catalog.
-- **Agent-to-agent:** `GET /.well-known/agent.json`, `POST /a2a/tasks`, peers via `PEER_AGENTS` or `POST /a2a/peers`, relay with `POST /a2a/peers/:name/tasks`.
-- **Storage:** in memory only. Decks and supplied icons are lost on restart.
-
-Run: `npm install && npm start` (needs the three `VIASOCKET_*` values in `.env`).
+Run: `npm install && npm start` (needs `VIASOCKET_ORG_ID`, `VIASOCKET_PROJECT_ID`, `VIASOCKET_EMBED_SECRET`). Deployed on Embarko as `partnership-deck-manager`.

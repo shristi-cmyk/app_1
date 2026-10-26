@@ -4,12 +4,10 @@ import { randomUUID, randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { generate, decks } from './src/generate.js'
 import * as icons from './src/icons.js'
-import { PRESETS } from './src/briefs.js'
 import { research } from './src/research.js'
 import { renderHtmlDeck } from './src/htmldeck.js'
-import { viasocket, planDelivery, runDelivery, ViaSocketError } from './src/viasocket.js'
+import { viasocket, ViaSocketError } from './src/viasocket.js'
 
 const app = express()
 app.use(express.json({ limit: '8mb' }))
@@ -29,27 +27,6 @@ app.use((req, res, next) => {
 const wrap = (fn) => (req, res) => fn(req, res).catch((e) => {
   const status = e instanceof ViaSocketError ? 502 : 400
   res.status(status).json({ error: e.message, ...(e.body && { detail: e.body }) })
-})
-
-// ---------- decks ----------
-app.get('/api/presets', (_req, res) => res.json(Object.keys(PRESETS)))
-
-app.post('/api/deck', wrap(async (req, res) => res.json(await generate({ ...req.body, uid: req.uid }))))
-
-app.post('/api/icons', wrap(async (req, res) => {
-  const { name, url, base64, mime } = req.body
-  if (!name) throw new Error('name is required')
-  if (url) await icons.supplyFromUrl(name, url)
-  else if (base64) icons.supply(name, base64, mime)
-  else throw new Error('Send a url or base64 image')
-  res.json({ ok: true })
-}))
-
-app.get('/decks/:id/:file', (req, res) => {
-  const d = decks.get(req.params.id)
-  const ext = req.params.file.split('.').pop()
-  if (!d?.[ext]) return res.sendStatus(404)
-  res.type(ext === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation').send(d[ext])
 })
 
 // ---------- animated 5-slide HTML decks: application name in, shareable link out ----------
@@ -96,32 +73,6 @@ app.get('/p/:id', wrap(async (req, res) => {
   res.type('html').send(html)
 }))
 
-// ---------- viaSocket: deliver a deck through the user's own app ----------
-app.get('/api/viasocket/token', wrap(async (req, res) => res.json({ embedToken: await viasocket().user(req.uid).token() })))
-
-app.get('/api/viasocket/apps', wrap(async (req, res) => res.json(await viasocket().catalog.search(String(req.query.q ?? '')))))
-
-app.get('/api/viasocket/connections', wrap(async (req, res) => res.json(await viasocket().user(req.uid).listConnections())))
-
-app.post('/api/viasocket/enable', wrap(async (req, res) => {
-  const { serviceId, authId } = req.body
-  const user = viasocket().user(req.uid)
-  const scriptId = (await user.findEnabled(serviceId)) ?? (await user.enable(serviceId, authId)).scriptId
-  res.json({ enabled: !!scriptId }) // the scriptId is a credential: it stays on the server
-}))
-
-app.get('/api/viasocket/plan', wrap(async (req, res) => res.json(await planDelivery(req.uid, String(req.query.serviceId), req.query.authId && String(req.query.authId)))))
-
-app.post('/api/viasocket/send', wrap(async (req, res) => {
-  const { serviceId, versionId, deckId, inputData } = req.body
-  const d = decks.get(deckId)
-  if (!d) throw new Error('Unknown deck')
-  const link = `${PUBLIC_URL}/decks/${deckId}/${d.base}.${d.pdf ? 'pdf' : 'pptx'}`
-  const fill = (v) => (v === '{{deck_link}}' ? link : v === '{{deck_name}}' ? d.base.replace('_', ' ').replace('_', ' ') : v)
-  const data = Object.fromEntries(Object.entries(inputData).map(([k, v]) => [k, typeof v === 'string' ? fill(v) : v]))
-  res.json(await runDelivery(req.uid, serviceId, versionId, data))
-}))
-
 // ---------- the product's AI, with this agent's tools ----------
 app.post('/api/chat', wrap(async (req, res) => {
   const reply = await viasocket().user(req.uid).ai.send({
@@ -153,36 +104,21 @@ app.post('/tools/partner_deck', wrap(async (req, res) => {
   res.json(await partnerDeck(req.body, req.headers['x-user']))
 }))
 
-app.post('/tools/generate_deck', wrap(async (req, res) => {
-  if (req.headers.authorization !== `Bearer ${TOOL_KEY}`) return res.sendStatus(401)
-  const { name, domain, color, context } = req.body
-  const preset = PRESETS[String(name).toLowerCase()] ? name : undefined
-  const out = await generate({ preset, partner: { name, domain, color }, context, useAi: !!context, uid: req.headers['x-user'] })
-  if (out.files) for (const k of Object.keys(out.files)) out.files[k] = PUBLIC_URL + out.files[k]
-  res.json(out)
-}))
-
 // ---------- agent-to-agent ----------
 const peers = new Map(JSON.parse(process.env.PEER_AGENTS ?? '[]').map((p) => [p.name, p]))
 
 app.get('/.well-known/agent.json', (_req, res) => res.json({
   name: 'Partnership Deck Manager',
-  description: 'Builds customised viaSocket pitch decks for partners, crawling for their icons and asking when one cannot be found.',
+  description: 'Application name in, shareable 5-slide viaSocket partnership deck out. Crawls the partner site for its use case, logo and colour, and asks when it cannot find one.',
   url: PUBLIC_URL,
   skills: [
     { id: 'partner_deck', description: 'Application name in, link to an animated 5-slide pitch deck out', input: { name: 'string', domain: 'string?', color: 'string?', context: 'string?' } },
-    { id: 'generate_deck', description: 'Build a 7-slide .pptx partner deck', input: { preset: 'string?', partner: '{name, domain, color}?', context: 'string?' } },
     { id: 'supply_icon', description: 'Provide a missing icon', input: { name: 'string', url: 'string' } }
   ]
 }))
 
 app.post('/a2a/tasks', wrap(async (req, res) => {
   const { skill, input = {}, from } = req.body
-  if (skill === 'generate_deck') {
-    const out = await generate({ ...input, uid: `agent-${from ?? 'peer'}` })
-    if (out.files) for (const k of Object.keys(out.files)) out.files[k] = PUBLIC_URL + out.files[k]
-    return res.json(out)
-  }
   if (skill === 'partner_deck') return res.json(await partnerDeck(input, `agent-${from ?? 'peer'}`))
   if (skill === 'supply_icon') { await icons.supplyFromUrl(input.name, input.url); return res.json({ ok: true }) }
   throw new Error(`Unknown skill "${skill}"`)
