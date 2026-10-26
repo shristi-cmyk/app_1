@@ -20,6 +20,10 @@ Everything runs through viaSocket (the `viasocket-apps` package); there is no se
 | `RESEARCH_SERVICE`, `RESEARCH_MODEL`, `READER_MODEL` | optional model overrides (see viaSocket's AI doc for names) |
 | `RUNS_PER_IP_PER_HOUR`, `MAX_RUNS_PER_DAY`, `MAX_CONCURRENT_RUNS` | optional caps for the public deployment (defaults 3, 100, 2) |
 
+## Keeping a local copy up to date (Windows)
+
+`update.cmd` pulls and installs once. `auto-update.cmd` keeps checking GitHub every 30 seconds in its own window, so changes pushed to the branch appear on `npm run dev` within a minute. Restart `npm run dev` only when `.env`, `package.json` or `next.config.js` change.
+
 ## Run
 
 `npm install && npm run build && npm start` (reads `PORT`). Tests: `npm test`. Nothing is stored on disk; reports are downloadable as Markdown.
