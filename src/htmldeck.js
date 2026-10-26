@@ -224,7 +224,7 @@ export async function renderHtmlDeck(brief, assets = {}) {
   const lum = rgb(c).map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((t, v, i) => t + v * [0.2126, 0.7152, 0.0722][i], 0)
   // Embarko adds a dismissible badge at the bottom left of hosted pages; keep the Back button clear of it.
   const hostFix = '<style>.controls{padding-left:136px}@media print{.controls{display:none}}</style>\n'
-  const tileFix = a.partnerTile ? '<style>.logo-ais,.tn-ic.tile img{background:#fff;padding:14%;object-fit:contain;box-sizing:border-box}</style>\n' : ''
+  const tileFix = a.partnerTile ? '<style>.logo-ais,.tn-ic.tile img{background:#fff;object-fit:contain;box-sizing:border-box}.logo-ais{padding:18px}.tn-ic.tile img{padding:6px}</style>\n' : ''
   const darkFix = hostFix + tileFix + (lum < 0.3 ? '<style>.v3{--lit-fg:#fff}.hero-q mark,.connect:not(.done){color:#fff}.mock .hero-lbl{color:var(--sec-tint)}@media print{.num{color:#fff !important}}</style>\n</head>' : '</head>')
   const marks = await MARKS
   return html.replace('</head>', () => darkFix).replace('<!--__SLIDES__-->', () => slides(brief, a, marks))
