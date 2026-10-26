@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { renderMarkdown } from '../lib/markdown.js'
-import { buildUserMessage, checkReport } from '../lib/agent.js'
+import { buildUserMessage, checkReport, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, extractLinks, assertPublicUrl } from '../lib/evidence.js'
 import { MASTER_PROMPT } from '../lib/master-prompt.js'
 import { acquire, resetLimits } from '../lib/limits.js'
@@ -60,4 +60,10 @@ test('checkReport warns when sections are missing and passes a full report', () 
   const w = checkReport('## 2. Application snapshot\nx')
   assert.match(w, /may be incomplete/)
   assert.match(w, /Research scope/)
+})
+
+test('user message stays under the viaSocket size limit', () => {
+  const big = 'x'.repeat(30000)
+  const m = buildUserMessage({ name: 'A', url: 'https://a.io', context: 'c' }, { pages: [{ url: 'u', text: big }, { url: 'v', text: big }], notes: [] }, { coverage: 'c', docs: big })
+  assert.ok(m.length <= MAX_MESSAGE_CHARS + 100)
 })
