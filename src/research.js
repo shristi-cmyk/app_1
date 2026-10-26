@@ -231,7 +231,8 @@ export async function research({ name, domain, color, context, uid = 'anonymous'
 
   return {
     brief,
-    assets: { partnerLogo: dataUri(logo.data), brands },
+    // A transparent logo (a bare mark) sits on a white tile, like the AiSensy logo's own tile.
+    assets: { partnerLogo: dataUri(logo.data), partnerTile: !(await sharp(Buffer.from(logo.data.split(',')[1], 'base64')).stats()).isOpaque, brands },
     sources: { site: site?.url ?? null, pagesRead: pages.map((p) => p.url), appsMentioned: apps, logo: logo.source, color: isAisensy && !color ? 'AiSensy preset' : brand.source, brief: briefSource, aiTailored: briefSource.startsWith('viaSocket AI') || isAisensy }
   }
 }
