@@ -194,3 +194,10 @@ Do not add any other section. Do not add a next-steps section.`
 2. Have the user test the Google Doc button locally (`git pull`, `npm run dev`) and fix whatever they report.
 3. Re-run AiSensy and a second app once Tavily is connected; verify the report's facts against the cited pages.
 4. When the user says the version is final: one deploy (section 8) and, if wanted, a pull request.
+
+## 13. Updates after the first handoff
+
+- **Customer voice is OFF** (`lib/config.js`, `CUSTOMER_VOICE=1` turns it back on): no review searches, no reviews step, no "What customers are asking for" section. The user will decide the approach later.
+- **Local workflow:** the user now tests on their own machine (`C:\dev\app_1`, PowerShell: use `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` before `npm run dev`; `.env` holds the viaSocket workspace values). They get changes with `git pull` from the branch; no deploys until they say final. Live Embarko app is older (no Google Doc fix of the intro text, no map visual, customer voice still on); `RUNS_PER_IP_PER_HOUR=20` is set there.
+- **Use-case visual ("product map")** now sits under the Use cases table: `app/UseCaseMap.js` (animated mock of the app, menu items light up per use case, pop-up shows the integration layer and the kinds of tools users would connect). Data comes from an extra viaSocket AI step (`VISUAL_PROMPT`, `buildVisual` in `lib/agent.js`, cleaned by `lib/visual.js`), sent as a `visual` NDJSON event before `done`; colour comes from the app's `theme-color` meta tag when present (else violet/orange placeholders). The other drafts (slideshow, flow lanes) remain at `/drafts` for comparison. The user wants to try the product map first, then refine it (match the app's colours/theme further).
+- **Open:** Next.js 14.2.15 is out of support (npm audit: critical/high); upgrade to a supported 15.5.x/16.x before the final deploy and test it first.

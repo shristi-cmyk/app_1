@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import UseCaseMap from '../UseCaseMap.js'
 
 // DRAFT visuals for the use-case section. Sample data comes from a Bolna report; colours are placeholders
 // that will later be matched to the researched app's own brand.
@@ -77,42 +78,10 @@ function DraftA() {
   )
 }
 
-// ---------- Draft B: product map, a mock app window whose menu items light up one by one ----------
+// ---------- Draft B: product map (now the shared component used in the report) ----------
+const SAMPLE = { app: APP, cases: CASES, theme: null }
 function DraftB() {
-  const [hover, setHover] = useState(false)
-  const [i, setI] = useCycle(CASES.length, 4500, hover)
-  const c = CASES[i]
-  return (
-    <div className="stage map" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      <div className="win">
-        <div className="win-bar"><i /><i /><i /><span>{APP}</span></div>
-        <div className="win-body">
-          <ul className="side">
-            {['Agents', ...CASES.map((x) => x.menu), 'Settings'].map((m) => {
-              const k = CASES.findIndex((x) => x.menu === m)
-              return (
-                <li key={m} className={k === i ? 'lit' : k >= 0 ? 'hot' : ''} onClick={() => k >= 0 && setI(k)}>
-                  {m}{k >= 0 && <b className="ping" />}
-                </li>
-              )
-            })}
-          </ul>
-          <div className="main">
-            <div className="skeleton w60" /><div className="skeleton w90" /><div className="skeleton w40" />
-            <div className="pop" key={i}>
-              <div className="pop-hd"><span className="layer-dot" /> Integration layer</div>
-              <div className="pop-apps">{c.apps.map((a, k) => <span key={a} className="chip-h" style={{ animationDelay: `${k * 0.15}s` }}>{a}</span>)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="detail" key={`d${i}`}>
-        <div className="kicker">{c.area} <Badge s={c.strength} /></div>
-        <h3>{c.title}</h3>
-        <p>{c.gets}</p>
-      </div>
-    </div>
-  )
+  return <UseCaseMap data={SAMPLE} />
 }
 
 // ---------- Draft C: flow lanes, all use cases at once with travelling pulses ----------
@@ -198,26 +167,7 @@ h3{margin:4px 0 8px;font-size:22px}
 .dots button.on{background:var(--p);transform:scale(1.3)}
 .progress{position:absolute;left:0;bottom:0;height:3px;background:var(--a);animation:prog 5.5s linear both}
 @keyframes prog{from{width:0}to{width:100%}}
-.map{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:24px;align-items:center}
-@media(max-width:760px){.map{grid-template-columns:1fr}}
-.win{border:1px solid #d5d8e0;border-radius:12px;overflow:hidden;background:#fafbfd}
-.win-bar{display:flex;gap:6px;align-items:center;padding:8px 12px;background:#eef0f5;font-size:13px;color:#667}
-.win-bar i{width:10px;height:10px;border-radius:50%;background:#c9cdd8}.win-bar span{margin-left:8px;font-weight:600}
-.win-body{display:grid;grid-template-columns:150px 1fr;min-height:260px}
-.side{list-style:none;margin:0;padding:10px;border-right:1px solid #e6e8ee;background:#fff}
-.side li{position:relative;padding:8px 10px;border-radius:8px;font-size:14px;color:#556;cursor:default;margin-bottom:2px;transition:all .3s}
-.side li.hot{cursor:pointer;color:#333}
-.side li.lit{background:var(--soft);color:var(--p);font-weight:700;box-shadow:inset 3px 0 0 var(--p)}
-.ping{position:absolute;right:8px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--a)}
-.lit .ping::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid var(--a);animation:ring 1.6s ease-out infinite}
-.main{padding:16px;position:relative}
-.skeleton{height:12px;border-radius:6px;background:#e9ebf1;margin-bottom:12px}.w60{width:60%}.w90{width:90%}.w40{width:40%}
-.pop{margin-top:26px;border:2px solid var(--p);border-radius:12px;background:#fff;padding:12px;animation:pop .45s ease both;box-shadow:0 8px 24px rgba(0,0,0,.08)}
-.pop-hd{font-weight:700;font-size:14px;color:var(--p);display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.layer-dot{width:10px;height:10px;border-radius:50%;background:var(--a)}
-.pop-apps{display:flex;gap:8px;flex-wrap:wrap}
 .chip-h{background:var(--soft);color:var(--p);border:1px solid var(--p);padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;animation:pop .4s ease both}
-.detail{animation:in .5s ease both}
 .lanes{display:flex;flex-direction:column;gap:10px}
 .lane{border:1px solid #e1e4ec;border-radius:12px;padding:12px 14px;cursor:pointer;animation:in .5s ease both;transition:border-color .2s,box-shadow .2s}
 .lane.open{border-color:var(--p);box-shadow:0 4px 16px rgba(0,0,0,.08)}

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { renderMarkdown } from '../lib/markdown.js'
+import { renderMarkdown, splitAtUseCases } from '../lib/markdown.js'
+import { useCasesSection, sanitizeVisual, brandColor } from '../lib/visual.js'
 import { checkReport, fit, packBlocks, reviewsMessage, noReviews, tidyLandscape, layerChecks, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
 import { scanPlatforms, siteLinks, LAYER_PROVIDER_DOMAINS } from '../lib/gather.js'
@@ -146,3 +147,40 @@ test('customer voice is off by default and comes back with the switch', () => {
 function full5() {
   return ['Snapshot', 'Use cases', 'Integration layer already in the app', 'Content ideas', 'Sources'].map((h) => `## ${h}\nx`).join('\n')
 }
+
+const REPORT = '## Snapshot\nx\n\n## Use cases\n| a | b |\n|---|---|\n| 1 | 2 |\n\n## Integration layer already in the app\ny'
+
+test('report splits right after the use cases section', () => {
+  const [before, after] = splitAtUseCases(REPORT)
+  assert.ok(before.trimEnd().endsWith('| 1 | 2 |'))
+  assert.ok(after.startsWith('## Integration layer'))
+  assert.deepEqual(splitAtUseCases('no sections'), ['no sections', ''])
+  assert.match(useCasesSection(REPORT), /^## Use cases[\s\S]*\| 1 \| 2 \|$/)
+})
+
+test('visual data is cleaned and bounded', () => {
+  const v = sanitizeVisual({
+    app_name: 'Bolna',
+    cases: [
+      { title: 'T', area: 'A', menu: 'Automations', gets: 'g', apps: ['CRM', 'Sheets', '', 'Slack', 'Email', 'Extra'], strength: 'strong' },
+      { title: '', area: 'A', menu: 'x', gets: 'g', apps: ['CRM'], strength: 'Strong' },
+      { title: 'No apps', area: 'A', menu: 'x', gets: 'g', apps: [], strength: 'Strong' },
+      ...Array.from({ length: 8 }, (_, k) => ({ title: `T${k}`, area: 'A', menu: `M${k}`, gets: 'g', apps: ['CRM'], strength: 'weird' })),
+    ],
+  }, '#123abc')
+  assert.equal(v.cases.length, 5)
+  assert.deepEqual(v.cases[0].apps, ['CRM', 'Sheets', 'Slack', 'Email'])
+  assert.equal(v.cases[0].strength, 'Strong')
+  assert.equal(v.cases[1].strength, 'Worth testing')
+  assert.deepEqual(v.theme, { p: '#123abc' })
+  assert.equal(sanitizeVisual({ cases: [] }), null)
+  assert.equal(sanitizeVisual(null), null)
+})
+
+test('brand colour: used when it is a real colour, ignored when near white or black', () => {
+  assert.equal(brandColor('<meta name="theme-color" content="#5B3DF5">'), '#5b3df5')
+  assert.equal(brandColor('<meta content="#0af" name="theme-color">'), '#00aaff')
+  assert.equal(brandColor('<meta name="theme-color" content="#ffffff">'), null)
+  assert.equal(brandColor('<meta name="theme-color" content="#000">'), null)
+  assert.equal(brandColor('<p>none</p>'), null)
+})

@@ -32,7 +32,8 @@ export async function POST(req) {
           onStatus: (v) => send('status', v),
           signal: req.signal,
         })
-        send('done', report)
+        send('visual', report.visual)
+        send('done', report.report)
       } catch (e) {
         try { send('error', String(e.message || e)) } catch {}
       } finally {

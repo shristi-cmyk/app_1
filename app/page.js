@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { connect, loadConnectScript } from 'viasocket-apps/browser'
-import { renderMarkdown } from '../lib/markdown.js'
+import { renderMarkdown, splitAtUseCases } from '../lib/markdown.js'
+import UseCaseMap from './UseCaseMap.js'
 
 const DOCS_ICON = 'https://stuff.thingsofbrand.com/google.com/images/imgc_Google_Docs.png'
 
@@ -14,6 +15,7 @@ export default function Home() {
   const [running, setRunning] = useState(false)
   const [status, setStatus] = useState([])
   const [report, setReport] = useState('')
+  const [visual, setVisual] = useState(null)
   const [error, setError] = useState('')
   const abort = useRef(null)
   const [google, setGoogle] = useState(null) // { serviceId, actions, token, connected, expired, authId }
@@ -59,7 +61,7 @@ export default function Home() {
 
   async function run(e) {
     e.preventDefault()
-    setRunning(true); setError(''); setReport(''); setStatus([]); setDoc({ busy: false, url: '', error: '' })
+    setRunning(true); setError(''); setReport(''); setVisual(null); setStatus([]); setDoc({ busy: false, url: '', error: '' })
     abort.current = new AbortController()
     try {
       const res = await fetch('/api/research', {
@@ -78,6 +80,7 @@ export default function Home() {
         for (const l of lines.filter(Boolean)) {
           const ev = JSON.parse(l)
           if (ev.t === 'status') setStatus((s) => [...s.slice(-5), ev.v])
+          else if (ev.t === 'visual') setVisual(ev.v)
           else if (ev.t === 'done') setReport(ev.v)
           else if (ev.t === 'error') setError(ev.v)
         }
@@ -124,7 +127,16 @@ export default function Home() {
               {doc.error && <p style={{ margin: '10px 0 0', color: '#8a1f1f' }}>{doc.error}</p>}
             </div>
           )}
-          <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(report) }} />
+          {(() => {
+            const [before, after] = splitAtUseCases(report)
+            return (
+              <>
+                <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(before) }} />
+                {visual && <UseCaseMap data={visual} />}
+                {after && <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(after) }} />}
+              </>
+            )
+          })()}
         </div>
       )}
       <style>{`.report table{border-collapse:collapse;width:100%;font-size:14px}.report th,.report td{border:1px solid #dde;padding:6px 8px;text-align:left;vertical-align:top}.report code{background:#eef;padding:1px 4px;border-radius:4px}.report{line-height:1.55;overflow-wrap:anywhere}`}</style>
