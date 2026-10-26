@@ -1,12 +1,12 @@
 # viaSocket Integration Use-Case Research Agent
 
-Enter an application name and URL; the agent follows the viaSocket "Integration Use-Case Research Executive" master prompt (`lib/master-prompt.js`, verbatim) and returns a source-backed report with the six required sections.
+Enter an application name and URL; the agent follows the viaSocket "Integration Use-Case Research Executive" master prompt (`lib/master-prompt.js`, verbatim) and returns a short, source-backed report: quick summary, use cases, content to create, where to use it, next steps and sources.
 
 Everything runs through viaSocket (the `viasocket-apps` package); there is no separate model key.
 
 - **AI:** `user.ai.send` (model via viaSocket; default `anthropic` / `claude-opus-4-7`), sent with `delivery: "rtlayer"` and the answer read from thread history, so no long HTTP call is held open. Threads belong to one stable owner id (`research-agent-owner`).
 - **Evidence the server gathers first:** the application's own pages (`lib/evidence.js`, SSRF-guarded) and viaSocket facts (`lib/viasocket-facts.js`): a live catalog lookup of the target app's actions/triggers and viaSocket's public product docs. The model can also use viaSocket's built-in web reading/search; if that is unavailable (for example the account is out of AI web credits) the report must say so.
-- **HQ agents:** no communication tool exists here; the report says internal input was unavailable.
+- **Other agents:** none can be contacted during a run; the report notes once that other relevant agents will be consulted next.
 
 ## Environment variables (set on the host; never commit)
 

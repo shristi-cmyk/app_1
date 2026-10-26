@@ -23,6 +23,8 @@ test('markdown renders headings, lists and tables', () => {
 
 test('master prompt is embedded and the user message carries the evidence', () => {
   assert.match(MASTER_PROMPT, /Research executive/i)
+  assert.ok(!/\bHQ\b/.test(MASTER_PROMPT))
+  assert.match(MASTER_PROMPT, /Content to create/)
   const m = buildUserMessage({ name: 'A', url: 'https://a.io', context: '' }, { pages: [{ url: 'https://a.io', text: 'hello' }], notes: [] }, { coverage: 'COV', docs: 'DOCS' })
   assert.match(m, /https:\/\/a\.io/)
   assert.match(m, /COV/)
@@ -55,11 +57,11 @@ test('limits: per-IP hourly cap and concurrency', () => {
 })
 
 test('checkReport warns when sections are missing and passes a full report', () => {
-  const full = ['1. Research scope', '2. Application snapshot', '3. Content and evidence landscape', '4. Use-case opportunities', '5. Recommendation and next research steps', '6. Sources'].map((h) => `## ${h}\nx`).join('\n')
+  const full = ['1. Quick summary', '2. Use cases', '3. Content to create', '4. Where to use this content', '5. Next steps', '6. Sources'].map((h) => `## ${h}\nx`).join('\n')
   assert.equal(checkReport(full), full)
-  const w = checkReport('## 2. Application snapshot\nx')
+  const w = checkReport('## 2. Use cases\nx')
   assert.match(w, /may be incomplete/)
-  assert.match(w, /Research scope/)
+  assert.match(w, /Quick summary/)
 })
 
 test('user message stays under the viaSocket size limit', () => {
