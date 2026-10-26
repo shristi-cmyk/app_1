@@ -2,20 +2,21 @@
 
 Enter an application name and URL; the agent follows the viaSocket "Integration Use-Case Research Executive" master prompt (`lib/master-prompt.js`, verbatim) and returns a source-backed report with the six required sections.
 
-- Research: Claude (`claude-opus-5-5`, adaptive thinking) with web search and web fetch.
-- viaSocket verification: read-only tools against viaSocket's public catalog and product docs (`lib/viasocket-tools.js`), so connector coverage and product capabilities are checked, not assumed. No embed secret or user connections are involved.
-- HQ agents: no communication tool exists here; the report says internal input was unavailable.
+Everything runs through viaSocket (the `viasocket-apps` package); there is no separate model key.
+
+- **AI:** `user.ai.send` (model via viaSocket; default `anthropic` / `claude-opus-4-7`), sent with `delivery: "rtlayer"` and the answer read from thread history, so no long HTTP call is held open. Threads belong to one stable owner id (`research-agent-owner`).
+- **Evidence the server gathers first:** the application's own pages (`lib/evidence.js`, SSRF-guarded) and viaSocket facts (`lib/viasocket-facts.js`): a live catalog lookup of the target app's actions/triggers and viaSocket's public product docs. The model can also use viaSocket's built-in web reading/search; if that is unavailable (for example the account is out of AI web credits) the report must say so.
+- **HQ agents:** no communication tool exists here; the report says internal input was unavailable.
 
 ## Environment variables (set on the host; never commit)
 
 | Name | Value |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | Anthropic API key. Server only. |
-| `RUNS_PER_IP_PER_HOUR`, `MAX_RUNS_PER_DAY`, `MAX_CONCURRENT_RUNS` | Optional caps for the public deployment (defaults 3, 100, 2). Each run spends API credits. |
-| `RESEARCH_MODEL` | Optional model override. |
+| `VIASOCKET_ORG_ID`, `VIASOCKET_PROJECT_ID` | from the viaSocket dashboard (Install Code) |
+| `VIASOCKET_EMBED_SECRET` | signing secret, server only |
+| `RESEARCH_SERVICE`, `RESEARCH_MODEL` | optional model override (see viaSocket's AI doc for names) |
+| `RUNS_PER_IP_PER_HOUR`, `MAX_RUNS_PER_DAY`, `MAX_CONCURRENT_RUNS` | optional caps for the public deployment (defaults 3, 100, 2) |
 
 ## Run
 
-`npm install && npm run build && npm start` (reads `PORT`). Tests: `npm test`.
-
-Nothing is stored on disk; reports are downloadable as Markdown.
+`npm install && npm run build && npm start` (reads `PORT`). Tests: `npm test`. Nothing is stored on disk; reports are downloadable as Markdown.

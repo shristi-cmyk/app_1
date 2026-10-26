@@ -10,8 +10,8 @@ function validUrl(s) {
 
 // Streams NDJSON events: {t:'status'|'text'|'done'|'error', v}; 'done' carries the clean final report
 export async function POST(req) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return Response.json({ error: 'ANTHROPIC_API_KEY is not set on the server.' }, { status: 503 })
+  if (!process.env.VIASOCKET_ORG_ID || !process.env.VIASOCKET_PROJECT_ID || !process.env.VIASOCKET_EMBED_SECRET) {
+    return Response.json({ error: 'viaSocket is not configured on the server.' }, { status: 503 })
   }
   const body = await req.json().catch(() => ({}))
   const name = String(body.name || '').trim().slice(0, 120)
@@ -29,7 +29,6 @@ export async function POST(req) {
       const send = (t, v) => controller.enqueue(enc.encode(JSON.stringify({ t, v }) + '\n'))
       try {
         const report = await runResearch({ name, url, context }, {
-          onText: (v) => send('text', v),
           onStatus: (v) => send('status', v),
           signal: req.signal,
         })

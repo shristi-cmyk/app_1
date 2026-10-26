@@ -1,9 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { renderMarkdown } from '../lib/markdown.js'
-import { finalReport, buildUserMessage } from '../lib/agent.js'
-import { TOOL_DEFS, runTool } from '../lib/viasocket-tools.js'
+import { buildUserMessage, checkReport } from '../lib/agent.js'
+import { isPrivateIp, htmlToText, extractLinks, assertPublicUrl } from '../lib/evidence.js'
 import { MASTER_PROMPT } from '../lib/master-prompt.js'
+import { acquire, resetLimits } from '../lib/limits.js'
 
 test('markdown escapes html and only links http(s)', () => {
   const h = renderMarkdown('<script>x</script> [a](javascript:alert(1)) [b](https://x.io/p)')
@@ -20,37 +21,43 @@ test('markdown renders headings, lists and tables', () => {
   assert.match(h, /<td>2<\/td>/)
 })
 
-test('finalReport keeps only text after the last tool block', () => {
-  const content = [
-    { type: 'text', text: 'Let me search.' },
-    { type: 'server_tool_use', name: 'web_search' },
-    { type: 'web_search_tool_result' },
-    { type: 'thinking', thinking: '' },
-    { type: 'text', text: '## Research scope' },
-  ]
-  assert.equal(finalReport(content), '## Research scope')
-})
-
-test('master prompt is embedded and tools are declared', () => {
+test('master prompt is embedded and the user message carries the evidence', () => {
   assert.match(MASTER_PROMPT, /Research executive/i)
-  assert.deepEqual(TOOL_DEFS.map((t) => t.name), ['viasocket_search_apps', 'viasocket_app_capabilities', 'viasocket_product_docs'])
-  assert.match(buildUserMessage({ name: 'A', url: 'https://a.io', context: '' }), /https:\/\/a\.io/)
+  const m = buildUserMessage({ name: 'A', url: 'https://a.io', context: '' }, { pages: [{ url: 'https://a.io', text: 'hello' }], notes: [] }, { coverage: 'COV', docs: 'DOCS' })
+  assert.match(m, /https:\/\/a\.io/)
+  assert.match(m, /COV/)
+  assert.match(m, /DOCS/)
 })
 
-test('runTool rejects unknown tools and docs', async () => {
-  await assert.rejects(runTool('nope', {}), /Unknown tool/)
-  await assert.rejects(runTool('viasocket_product_docs', { doc: '../secret' }), /Unknown doc/)
+test('SSRF guard blocks private and metadata targets', async () => {
+  for (const ip of ['127.0.0.1', '10.1.2.3', '169.254.169.254', '192.168.0.1', '172.16.5.5', '::1', 'fd00::1', '::ffff:10.0.0.1']) assert.ok(isPrivateIp(ip), ip)
+  assert.ok(!isPrivateIp('8.8.8.8'))
+  await assert.rejects(assertPublicUrl('http://127.0.0.1/'), /public/)
+  await assert.rejects(assertPublicUrl('file:///etc/passwd'), /http/)
+  await assert.rejects(assertPublicUrl('http://example.com:8080/'), /ports/)
 })
 
-import { acquire, resetLimits } from '../lib/limits.js'
+test('html helpers strip scripts and pick relevant same-site links', () => {
+  const html = '<script>evil()</script><p>Hi &amp; bye</p><a href="/docs/api">d</a><a href="https://other.com/docs">x</a><a href="/about">a</a>'
+  assert.match(htmlToText(html), /^Hi & bye/)
+  assert.ok(!htmlToText(html).includes('evil'))
+  assert.deepEqual(extractLinks(html, 'https://a.io/'), ['https://a.io/docs/api'])
+})
+
 test('limits: per-IP hourly cap and concurrency', () => {
   resetLimits()
-  const a = acquire('1.1.1.1'); a.release()
-  const b = acquire('1.1.1.1'); b.release()
-  const c = acquire('1.1.1.1'); c.release()
+  for (let i = 0; i < 3; i++) acquire('1.1.1.1').release()
   assert.equal(acquire('1.1.1.1').ok, false)
   assert.equal(acquire('2.2.2.2').ok, true)
   assert.equal(acquire('3.3.3.3').ok, true)
   assert.equal(acquire('4.4.4.4').ok, false) // 2 concurrent already held
   resetLimits()
+})
+
+test('checkReport warns when sections are missing and passes a full report', () => {
+  const full = ['1. Research scope', '2. Application snapshot', '3. Content and evidence landscape', '4. Use-case opportunities', '5. Recommendation and next research steps', '6. Sources'].map((h) => `## ${h}\nx`).join('\n')
+  assert.equal(checkReport(full), full)
+  const w = checkReport('## 2. Application snapshot\nx')
+  assert.match(w, /may be incomplete/)
+  assert.match(w, /Research scope/)
 })

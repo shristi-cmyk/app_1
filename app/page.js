@@ -27,7 +27,7 @@ export default function Home() {
       if (!res.ok) throw new Error((await res.json()).error || 'Request failed')
       const reader = res.body.getReader()
       const dec = new TextDecoder()
-      let buf = '', live = ''
+      let buf = ''
       for (;;) {
         const { done, value } = await reader.read()
         if (done) break
@@ -35,9 +35,8 @@ export default function Home() {
         const lines = buf.split('\n'); buf = lines.pop()
         for (const l of lines.filter(Boolean)) {
           const ev = JSON.parse(l)
-          if (ev.t === 'text') { live += ev.v; setReport(live) }
-          else if (ev.t === 'status') setStatus((s) => [...s.slice(-5), ev.v])
-          else if (ev.t === 'done') setReport(ev.v || live)
+          if (ev.t === 'status') setStatus((s) => [...s.slice(-5), ev.v])
+          else if (ev.t === 'done') setReport(ev.v)
           else if (ev.t === 'error') setError(ev.v)
         }
       }
