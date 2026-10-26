@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { renderMarkdown } from '../lib/markdown.js'
 import { checkReport, fit, packBlocks, reviewsMessage, noReviews, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
-import { scanPlatforms, siteLinks } from '../lib/gather.js'
+import { scanPlatforms, siteLinks, LAYER_PROVIDER_DOMAINS } from '../lib/gather.js'
 import { SHARED_RULES, REPORT_PROMPT } from '../lib/prompts.js'
 import { acquire, resetLimits } from '../lib/limits.js'
 
@@ -26,6 +26,8 @@ test('prompts: no HQ wording, wording rule present, no next-steps section', () =
   assert.ok(!/\bHQ\b/.test(SHARED_RULES + REPORT_PROMPT))
   assert.match(SHARED_RULES, /Never use the words "embed", "embedded" or "SDK"/)
   assert.match(REPORT_PROMPT, /## Integration layer already in the app/)
+  assert.match(REPORT_PROMPT, /Listed automation partners \(outside the product\)/)
+  assert.match(REPORT_PROMPT, /One row per use case from the Use cases table/)
   assert.ok(!/^## Next steps/m.test(REPORT_PROMPT))
   assert.match(SHARED_RULES, /NOT an automation recipe/)
   assert.match(REPORT_PROMPT, /Where it fits in the app/)
@@ -46,13 +48,19 @@ test('html and domain helpers', () => {
   assert.equal(rootDomain('www.shop.co.uk'), 'shop.co.uk')
 })
 
-test('platform scan tells code in the page from mentions and links', () => {
-  const html = '<script src="https://embed.viasocket.com/prod-embedcomponent.js"></script><p>Works with Integrately</p><a href="https://www.pabbly.com/connect/">p</a>'
-  const hits = Object.fromEntries(scanPlatforms(html, 'https://a.io/', true).map((h) => [h.platform, h.how]))
-  assert.equal(hits.viaSocket, "loads the platform's code in the page")
-  assert.equal(hits.Integrately, "named on the app's own page")
-  assert.equal(hits['Pabbly Connect'], "linked from the app's own page")
-  assert.equal(hits.Zapier, undefined)
+test('provider scan separates code in the page, in-product wording and plain names', () => {
+  const html = '<script src="https://connect.useparagon.com/sdk.js"></script><p>Integrations powered by Zapier.</p><p>Also on Integrately.</p>'
+  const hits = Object.fromEntries(scanPlatforms(html, 'https://a.io/').map((h) => [h.provider, [h.type, h.signal]]))
+  assert.deepEqual(hits.Paragon, ['in-app integration layer', 'provider code loaded in the page'])
+  assert.equal(hits.Zapier[1], 'in-product wording (white-label, powered by, connect portal)')
+  assert.equal(hits.Integrately[1], 'name only')
+  assert.equal(hits.Merge, undefined)
+})
+
+test('provider customer search skips automation directories', () => {
+  assert.ok(LAYER_PROVIDER_DOMAINS.includes('useparagon.com'))
+  assert.ok(LAYER_PROVIDER_DOMAINS.includes('merge.dev'))
+  assert.ok(!LAYER_PROVIDER_DOMAINS.includes('zapier.com'))
 })
 
 test('site links: same site incl. subdomains, integrations first', () => {
