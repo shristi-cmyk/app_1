@@ -201,3 +201,9 @@ test('theme: colours are read, ranked and validated', async () => {
   assert.deepEqual(sanitizeTheme({ p: 'red', a: '#FF0000', logo: 'javascript:alert(1)', font: 'Inter;}body{x' }), { a: '#ff0000' })
   assert.equal(sanitizeTheme({ logo: 'x' }), null)
 })
+
+test('markdown: italic lines render, snake_case words stay plain', () => {
+  assert.match(renderMarkdown('_Other agents will also review this._'), /<em>Other agents will also review this\.<\/em>/)
+  assert.ok(!renderMarkdown('see my_var_name here').includes('<em>'))
+  assert.match(renderMarkdown('a **bold** and _soft_ text'), /<strong>bold<\/strong> and <em>soft<\/em> text/)
+})

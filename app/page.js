@@ -142,7 +142,7 @@ export default function Home() {
           })()}
         </div>
       )}
-      <style>{`.report table{border-collapse:collapse;width:100%;font-size:14px}.report th,.report td{border:1px solid #dde;padding:6px 8px;text-align:left;vertical-align:top}.report code{background:#eef;padding:1px 4px;border-radius:4px}.report{line-height:1.55;overflow-wrap:anywhere}`}</style>
+      <style>{`.report table{border-collapse:collapse;width:100%;font-size:14px}.report th,.report td{border:1px solid #dde;padding:6px 8px;text-align:left;vertical-align:top}.report code{background:#eef;padding:1px 4px;border-radius:4px}.report{line-height:1.55;overflow-wrap:break-word}.report td,.report th{word-break:normal}`}</style>
     </main>
   )
 }
