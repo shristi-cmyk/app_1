@@ -27,6 +27,9 @@ test('prompts: no HQ wording, wording rule present, no next-steps section', () =
   assert.match(SHARED_RULES, /Never use the words "embed", "embedded" or "SDK"/)
   assert.match(REPORT_PROMPT, /## Integration layer already in the app/)
   assert.ok(!/^## Next steps/m.test(REPORT_PROMPT))
+  assert.match(SHARED_RULES, /NOT an automation recipe/)
+  assert.match(REPORT_PROMPT, /Where it fits in the app/)
+  assert.ok(!/catalog/i.test(REPORT_PROMPT))
 })
 
 test('SSRF guard blocks private and metadata targets', async () => {

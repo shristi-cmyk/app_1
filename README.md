@@ -5,7 +5,8 @@ Enter an application name and URL; the agent follows the viaSocket "Integration 
 Everything runs through viaSocket (the `viasocket-apps` package); there is no separate model key.
 
 - **AI:** `user.ai.send` (model via viaSocket; default `anthropic` / `claude-opus-4-7`), sent with `delivery: "rtlayer"` and the answer read from thread history, so no long HTTP call is held open. Threads belong to one stable owner id (`research-agent-owner`).
-- **Evidence the server gathers first:** the application's own pages (`lib/evidence.js`, SSRF-guarded) and viaSocket facts (`lib/viasocket-facts.js`): a live catalog lookup of the target app's actions/triggers and viaSocket's public product docs. The model can also use viaSocket's built-in web reading/search; if that is unavailable (for example the account is out of AI web credits) the report must say so.
+- **Evidence:** the app's own site and help docs (fetched directly, honest user agent, SSRF-guarded), web search with page text through viaSocket's Tavily app (owner connects it once at `/setup?key=SETUP_KEY`), and a scan for integration platforms in and around the app.
+- **Steps:** read reviews, map the integration landscape, then write a short report: snapshot, use cases (where the integration layer fits inside the app), what customers ask for, integration layer already in the app, content ideas, sources.
 - **Other agents:** none can be contacted during a run; the report notes once that other relevant agents will be consulted next.
 
 ## Environment variables (set on the host; never commit)
@@ -14,7 +15,8 @@ Everything runs through viaSocket (the `viasocket-apps` package); there is no se
 | --- | --- |
 | `VIASOCKET_ORG_ID`, `VIASOCKET_PROJECT_ID` | from the viaSocket dashboard (Install Code) |
 | `VIASOCKET_EMBED_SECRET` | signing secret, server only |
-| `RESEARCH_SERVICE`, `RESEARCH_MODEL` | optional model override (see viaSocket's AI doc for names) |
+| `SETUP_KEY` | random string that guards the owner's `/setup` page |
+| `RESEARCH_SERVICE`, `RESEARCH_MODEL`, `READER_MODEL` | optional model overrides (see viaSocket's AI doc for names) |
 | `RUNS_PER_IP_PER_HOUR`, `MAX_RUNS_PER_DAY`, `MAX_CONCURRENT_RUNS` | optional caps for the public deployment (defaults 3, 100, 2) |
 
 ## Run
