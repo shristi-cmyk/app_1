@@ -1,9 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { renderMarkdown } from '../lib/markdown.js'
-import { buildUserMessage, checkReport, MAX_MESSAGE_CHARS } from '../lib/agent.js'
-import { isPrivateIp, htmlToText, extractLinks, assertPublicUrl } from '../lib/evidence.js'
-import { MASTER_PROMPT } from '../lib/master-prompt.js'
+import { checkReport, fit, packBlocks, reviewsMessage, MAX_MESSAGE_CHARS } from '../lib/agent.js'
+import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
+import { scanPlatforms, siteLinks } from '../lib/gather.js'
+import { SHARED_RULES, REPORT_PROMPT } from '../lib/prompts.js'
 import { acquire, resetLimits } from '../lib/limits.js'
 
 test('markdown escapes html and only links http(s)', () => {
@@ -21,14 +22,11 @@ test('markdown renders headings, lists and tables', () => {
   assert.match(h, /<td>2<\/td>/)
 })
 
-test('master prompt is embedded and the user message carries the evidence', () => {
-  assert.match(MASTER_PROMPT, /Research executive/i)
-  assert.ok(!/\bHQ\b/.test(MASTER_PROMPT))
-  assert.match(MASTER_PROMPT, /Content to create/)
-  const m = buildUserMessage({ name: 'A', url: 'https://a.io', context: '' }, { pages: [{ url: 'https://a.io', text: 'hello' }], notes: [] }, { coverage: 'COV', docs: 'DOCS' })
-  assert.match(m, /https:\/\/a\.io/)
-  assert.match(m, /COV/)
-  assert.match(m, /DOCS/)
+test('prompts: no HQ wording, wording rule present, no next-steps section', () => {
+  assert.ok(!/\bHQ\b/.test(SHARED_RULES + REPORT_PROMPT))
+  assert.match(SHARED_RULES, /Never use the words "embed", "embedded" or "SDK"/)
+  assert.match(REPORT_PROMPT, /## Integration layer already in the app/)
+  assert.ok(!/^## Next steps/m.test(REPORT_PROMPT))
 })
 
 test('SSRF guard blocks private and metadata targets', async () => {
@@ -39,11 +37,41 @@ test('SSRF guard blocks private and metadata targets', async () => {
   await assert.rejects(assertPublicUrl('http://example.com:8080/'), /ports/)
 })
 
-test('html helpers strip scripts and pick relevant same-site links', () => {
-  const html = '<script>evil()</script><p>Hi &amp; bye</p><a href="/docs/api">d</a><a href="https://other.com/docs">x</a><a href="/about">a</a>'
-  assert.match(htmlToText(html), /^Hi & bye/)
-  assert.ok(!htmlToText(html).includes('evil'))
-  assert.deepEqual(extractLinks(html, 'https://a.io/'), ['https://a.io/docs/api'])
+test('html and domain helpers', () => {
+  assert.match(htmlToText('<script>evil()</script><p>Hi &amp; bye</p>'), /^Hi & bye/)
+  assert.equal(rootDomain('help.aisensy.com'), 'aisensy.com')
+  assert.equal(rootDomain('www.shop.co.uk'), 'shop.co.uk')
+})
+
+test('platform scan tells code in the page from mentions and links', () => {
+  const html = '<script src="https://embed.viasocket.com/prod-embedcomponent.js"></script><p>Works with Integrately</p><a href="https://www.pabbly.com/connect/">p</a>'
+  const hits = Object.fromEntries(scanPlatforms(html, 'https://a.io/', true).map((h) => [h.platform, h.how]))
+  assert.equal(hits.viaSocket, "loads the platform's code in the page")
+  assert.equal(hits.Integrately, "named on the app's own page")
+  assert.equal(hits['Pabbly Connect'], "linked from the app's own page")
+  assert.equal(hits.Zapier, undefined)
+})
+
+test('site links: same site incl. subdomains, integrations first', () => {
+  const html = '<a href="/pricing">p</a><a href="https://help.a.io/zapier">h</a><a href="/integrations">i</a><a href="https://b.io/integrations">x</a>'
+  assert.deepEqual(siteLinks(html, 'https://a.io/').map((l) => l.url), ['https://a.io/integrations', 'https://help.a.io/zapier', 'https://a.io/pricing'])
+})
+
+test('messages stay under the viaSocket size limit', () => {
+  const big = 'x'.repeat(40000)
+  assert.ok(fit([big, big]).length <= MAX_MESSAGE_CHARS + 100)
+  assert.ok(packBlocks([{ title: 'a', text: big, cap: 9000 }, { title: 'b', text: big, cap: 9000 }], 12000).length <= 12100)
+  const ev = { reviews: [{ source: 'g2.com', status: 'read', url: 'u', title: 't', text: big }, { source: 'capterra.com', status: 'empty', url: 'v', title: 't', text: '' }], searches: [] }
+  const m = reviewsMessage({ name: 'A', url: 'https://a.io' }, ev)
+  assert.ok(m.length <= MAX_MESSAGE_CHARS + 100)
+  assert.match(m, /capterra.com: empty/)
+})
+
+test('checkReport: wording clean-up and missing-section warning', () => {
+  const full = ['Snapshot', 'Use cases', 'What customers are asking for', 'Integration layer already in the app', 'Content ideas', 'Sources'].map((h) => `## ${h}\nx`).join('\n')
+  assert.equal(checkReport(full), full)
+  assert.match(checkReport(`${full}\nviaSocket Embed SDK and embedded integrations`), /viaSocket integration layer and in-app integrations/)
+  assert.match(checkReport('## Use cases\nx'), /may be incomplete/)
 })
 
 test('limits: per-IP hourly cap and concurrency', () => {
@@ -54,18 +82,4 @@ test('limits: per-IP hourly cap and concurrency', () => {
   assert.equal(acquire('3.3.3.3').ok, true)
   assert.equal(acquire('4.4.4.4').ok, false) // 2 concurrent already held
   resetLimits()
-})
-
-test('checkReport warns when sections are missing and passes a full report', () => {
-  const full = ['1. Quick summary', '2. Use cases', '3. Content to create', '4. Where to use this content', '5. Next steps', '6. Sources'].map((h) => `## ${h}\nx`).join('\n')
-  assert.equal(checkReport(full), full)
-  const w = checkReport('## 2. Use cases\nx')
-  assert.match(w, /may be incomplete/)
-  assert.match(w, /Quick summary/)
-})
-
-test('user message stays under the viaSocket size limit', () => {
-  const big = 'x'.repeat(30000)
-  const m = buildUserMessage({ name: 'A', url: 'https://a.io', context: 'c' }, { pages: [{ url: 'u', text: big }, { url: 'v', text: big }], notes: [] }, { coverage: 'c', docs: big })
-  assert.ok(m.length <= MAX_MESSAGE_CHARS + 100)
 })
