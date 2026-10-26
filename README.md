@@ -11,7 +11,7 @@ Enter an application name and URL; the agent follows the viaSocket "Integration 
 | Name | Value |
 | --- | --- |
 | `ANTHROPIC_API_KEY` | Anthropic API key. Server only. |
-| `APP_PASSWORD` | Password for the browser login prompt (the app spends API credits, keep it private). |
+| `RUNS_PER_IP_PER_HOUR`, `MAX_RUNS_PER_DAY`, `MAX_CONCURRENT_RUNS` | Optional caps for the public deployment (defaults 3, 100, 2). Each run spends API credits. |
 | `RESEARCH_MODEL` | Optional model override. |
 
 ## Run

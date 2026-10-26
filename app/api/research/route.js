@@ -1,4 +1,5 @@
 import { runResearch } from '../../../lib/agent.js'
+import { acquire } from '../../../lib/limits.js'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 900
@@ -18,6 +19,10 @@ export async function POST(req) {
   const context = String(body.context || '').trim().slice(0, 2000)
   if (!name || !validUrl(url)) return Response.json({ error: 'An application name and a valid http(s) URL are required.' }, { status: 400 })
 
+  const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
+  const slot = acquire(ip)
+  if (!slot.ok) return Response.json({ error: slot.reason }, { status: 429 })
+
   const enc = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
@@ -30,10 +35,13 @@ export async function POST(req) {
         })
         send('done', report)
       } catch (e) {
-        send('error', String(e.message || e))
+        try { send('error', String(e.message || e)) } catch {}
+      } finally {
+        slot.release()
+        try { controller.close() } catch {}
       }
-      controller.close()
     },
+    cancel() { slot.release() },
   })
   return new Response(stream, { headers: { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store' } })
 }

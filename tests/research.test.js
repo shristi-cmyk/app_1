@@ -41,3 +41,16 @@ test('runTool rejects unknown tools and docs', async () => {
   await assert.rejects(runTool('nope', {}), /Unknown tool/)
   await assert.rejects(runTool('viasocket_product_docs', { doc: '../secret' }), /Unknown doc/)
 })
+
+import { acquire, resetLimits } from '../lib/limits.js'
+test('limits: per-IP hourly cap and concurrency', () => {
+  resetLimits()
+  const a = acquire('1.1.1.1'); a.release()
+  const b = acquire('1.1.1.1'); b.release()
+  const c = acquire('1.1.1.1'); c.release()
+  assert.equal(acquire('1.1.1.1').ok, false)
+  assert.equal(acquire('2.2.2.2').ok, true)
+  assert.equal(acquire('3.3.3.3').ok, true)
+  assert.equal(acquire('4.4.4.4').ok, false) // 2 concurrent already held
+  resetLimits()
+})
