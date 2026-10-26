@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import UseCaseMap from '../UseCaseMap.js'
+import UseCaseSlideshow from '../UseCaseSlideshow.js'
 
 // DRAFT visuals for the use-case section. Sample data comes from a Bolna report; colours are placeholders
 // that will later be matched to the researched app's own brand.
@@ -31,51 +32,10 @@ function useCycle(n, ms, paused) {
 
 const Badge = ({ s }) => <span className={`badge ${s === 'Strong' ? 'strong' : 'test'}`}>{s}</span>
 
-// ---------- Draft A: slideshow, one slide per use case, animated hub diagram ----------
+// ---------- Draft A: the branded slideshow (now used in the report) ----------
+const SAMPLE_A = { app: APP, cases: CASES, theme: null }
 function DraftA() {
-  const [hover, setHover] = useState(false)
-  const [i, setI] = useCycle(CASES.length, 5500, hover)
-  const c = CASES[i]
-  const ys = [48, 110, 172]
-  return (
-    <div className="stage" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      <div className="slide" key={i}>
-        <div className="slide-text">
-          <div className="kicker">Use case {i + 1} of {CASES.length} <Badge s={c.strength} /></div>
-          <h3>{c.title}</h3>
-          <p className="where">Where: <strong>{c.area}</strong></p>
-          <p>{c.gets}</p>
-        </div>
-        <svg viewBox="0 0 600 220" className="diagram" role="img" aria-label={`${c.title}: users, ${APP}, integration layer, their apps`}>
-          <circle cx="50" cy="110" r="26" className="node-soft" />
-          <text x="50" y="114" textAnchor="middle" className="t-small">Users</text>
-          <line x1="76" y1="110" x2="136" y2="110" className="flow" />
-          <rect x="136" y="82" width="140" height="56" rx="14" className="node-main" />
-          <text x="206" y="106" textAnchor="middle" className="t-white">{APP}</text>
-          <text x="206" y="124" textAnchor="middle" className="t-white-s">{c.menu}</text>
-          <line x1="276" y1="110" x2="340" y2="110" className="flow" />
-          <circle cx="380" cy="110" r="44" className="ring r1" />
-          <circle cx="380" cy="110" r="44" className="ring r2" />
-          <circle cx="380" cy="110" r="38" className="node-accent" />
-          <text x="380" y="106" textAnchor="middle" className="t-hub">Integration</text>
-          <text x="380" y="121" textAnchor="middle" className="t-hub">layer</text>
-          {c.apps.map((a, k) => (
-            <g key={a}>
-              <path d={`M418 110 C 470 110, 470 ${ys[k]}, 500 ${ys[k]}`} className="flow" style={{ animationDelay: `${k * 0.25}s` }} />
-              <rect x="500" y={ys[k] - 18} width="86" height="36" rx="18" className="chip" style={{ animationDelay: `${0.3 + k * 0.2}s` }} />
-              <text x="543" y={ys[k] + 4} textAnchor="middle" className="t-chip">{a}</text>
-            </g>
-          ))}
-        </svg>
-      </div>
-      <div className="controls">
-        <button onClick={() => setI((i + CASES.length - 1) % CASES.length)} aria-label="Previous">‹</button>
-        <div className="dots">{CASES.map((_, k) => <button key={k} className={k === i ? 'on' : ''} onClick={() => setI(k)} aria-label={`Use case ${k + 1}`} />)}</div>
-        <button onClick={() => setI((i + 1) % CASES.length)} aria-label="Next">›</button>
-      </div>
-      {!hover && <div className="progress" key={`p${i}`} />}
-    </div>
-  )
+  return <UseCaseSlideshow data={SAMPLE_A} />
 }
 
 // ---------- Draft B: product map (now the shared component used in the report) ----------

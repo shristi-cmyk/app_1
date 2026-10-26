@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { renderMarkdown, splitAtUseCases } from '../lib/markdown.js'
-import { useCasesSection, sanitizeVisual, brandColor } from '../lib/visual.js'
+import { useCasesSection, sanitizeVisual } from '../lib/visual.js'
+import { toHex, isBrandy, colorsIn, pickColors, brandMeta, googleFont, extractTheme, sanitizeTheme } from '../lib/theme.js'
 import { checkReport, fit, packBlocks, reviewsMessage, noReviews, tidyLandscape, layerChecks, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
 import { scanPlatforms, siteLinks, LAYER_PROVIDER_DOMAINS } from '../lib/gather.js'
@@ -167,20 +168,36 @@ test('visual data is cleaned and bounded', () => {
       { title: 'No apps', area: 'A', menu: 'x', gets: 'g', apps: [], strength: 'Strong' },
       ...Array.from({ length: 8 }, (_, k) => ({ title: `T${k}`, area: 'A', menu: `M${k}`, gets: 'g', apps: ['CRM'], strength: 'weird' })),
     ],
-  }, '#123abc')
+  }, { p: '#123abc', a: '#ff8800', logo: 'https://x.io/i.png', font: 'Inter' })
   assert.equal(v.cases.length, 5)
   assert.deepEqual(v.cases[0].apps, ['CRM', 'Sheets', 'Slack', 'Email'])
   assert.equal(v.cases[0].strength, 'Strong')
   assert.equal(v.cases[1].strength, 'Worth testing')
-  assert.deepEqual(v.theme, { p: '#123abc' })
+  assert.deepEqual(v.theme, { p: '#123abc', a: '#ff8800', logo: 'https://x.io/i.png', font: 'Inter' })
   assert.equal(sanitizeVisual({ cases: [] }), null)
   assert.equal(sanitizeVisual(null), null)
 })
 
-test('brand colour: used when it is a real colour, ignored when near white or black', () => {
-  assert.equal(brandColor('<meta name="theme-color" content="#5B3DF5">'), '#5b3df5')
-  assert.equal(brandColor('<meta content="#0af" name="theme-color">'), '#00aaff')
-  assert.equal(brandColor('<meta name="theme-color" content="#ffffff">'), null)
-  assert.equal(brandColor('<meta name="theme-color" content="#000">'), null)
-  assert.equal(brandColor('<p>none</p>'), null)
+test('theme: colours are read, ranked and validated', async () => {
+  assert.equal(toHex('rgb(91, 61, 245)'), '#5b3df5')
+  assert.equal(toHex('#0af'), '#00aaff')
+  assert.ok(isBrandy('#5b3df5') && !isBrandy('#ffffff') && !isBrandy('#222222') && !isBrandy('#9aa0aa'))
+  assert.equal(brandMeta('<meta name="theme-color" content="#5B3DF5">'), '#5b3df5')
+  assert.equal(brandMeta('<meta name="theme-color" content="#ffffff">'), null)
+  const css = ':root{--brand-primary:#0e9f8e;--gray:#888}a{color:#3b82f6}b{color:#3b82f6}i{color:#3b82f6}p{color:#f5a524}'
+  const found = colorsIn(css)
+  assert.deepEqual(found.named, ['#0e9f8e'])
+  assert.equal(found.frequent[0], '#3b82f6')
+  const picked = pickColors({ named: found.named, frequent: found.frequent })
+  assert.equal(picked.p, '#0e9f8e')
+  assert.notEqual(picked.a, picked.p)
+  assert.equal(pickColors({}), null)
+  assert.equal(googleFont('<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap">'), 'DM Sans')
+  assert.equal(googleFont('<p>none</p>'), null)
+  const html = '<link rel="stylesheet" href="/a.css"><link rel="apple-touch-icon" href="/logo.png"><style>.x{color:#e5484d}</style>'
+  const t = await extractTheme({ url: 'https://a.io/', html }, { fetch: async () => ({ text: ':root{--primary:#0e9f8e}' }) })
+  assert.equal(t.p, '#0e9f8e')
+  assert.equal(t.logo, 'https://a.io/logo.png')
+  assert.deepEqual(sanitizeTheme({ p: 'red', a: '#FF0000', logo: 'javascript:alert(1)', font: 'Inter;}body{x' }), { a: '#ff0000' })
+  assert.equal(sanitizeTheme({ logo: 'x' }), null)
 })

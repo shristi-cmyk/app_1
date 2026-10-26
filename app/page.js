@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { connect, loadConnectScript } from 'viasocket-apps/browser'
 import { renderMarkdown, splitAtUseCases } from '../lib/markdown.js'
-import UseCaseMap from './UseCaseMap.js'
+import UseCaseSlideshow from './UseCaseSlideshow.js'
 
 const DOCS_ICON = 'https://stuff.thingsofbrand.com/google.com/images/imgc_Google_Docs.png'
 
@@ -132,7 +132,7 @@ export default function Home() {
             return (
               <>
                 <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(before) }} />
-                {visual && <UseCaseMap data={visual} />}
+                {visual && <UseCaseSlideshow data={visual} />}
                 {after && <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(after) }} />}
               </>
             )
