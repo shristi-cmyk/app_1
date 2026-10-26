@@ -4,7 +4,7 @@ import { renderMarkdown } from '../lib/markdown.js'
 import { checkReport, fit, packBlocks, reviewsMessage, noReviews, tidyLandscape, layerChecks, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
 import { scanPlatforms, siteLinks, LAYER_PROVIDER_DOMAINS } from '../lib/gather.js'
-import { SHARED_RULES, REPORT_PROMPT } from '../lib/prompts.js'
+import { SHARED_RULES, REPORT_PROMPT, reportPrompt } from '../lib/prompts.js'
 import { acquire, resetLimits } from '../lib/limits.js'
 import { markdownToText } from '../lib/plaintext.js'
 import { readVisitorId, newVisitor } from '../lib/visitor.js'
@@ -82,7 +82,7 @@ test('messages stay under the viaSocket size limit', () => {
 })
 
 test('checkReport: wording clean-up and missing-section warning', () => {
-  const full = ['Snapshot', 'Use cases', 'What customers are asking for', 'Integration layer already in the app', 'Content ideas', 'Sources'].map((h) => `## ${h}\nx`).join('\n')
+  const full = ['Snapshot', 'Use cases', 'Integration layer already in the app', 'Content ideas', 'Sources'].map((h) => `## ${h}\nx`).join('\n')
   assert.equal(checkReport(full), full)
   assert.match(checkReport(`${full}\nviaSocket Embed SDK and embedded integrations`), /viaSocket integration layer and in-app integrations/)
   assert.match(checkReport('## Use cases\nx'), /may be incomplete/)
@@ -136,3 +136,13 @@ test('visitor id: random, cookie-bound, httpOnly', () => {
   assert.equal(readVisitorId(new Request('http://localhost/', { headers: { cookie: 'rv=../../etc' } })), null)
   assert.match(newVisitor(new Request('http://x/', { headers: { 'x-forwarded-proto': 'https' } })).cookie, /Secure/)
 })
+
+test('customer voice is off by default and comes back with the switch', () => {
+  assert.ok(!/What customers are asking for/.test(REPORT_PROMPT))
+  assert.match(reportPrompt(true), /## What customers are asking for/)
+  assert.match(checkReport(full5(), true), /Missing section\(s\): What customers are asking for/)
+  assert.equal(checkReport(full5(), false), full5())
+})
+function full5() {
+  return ['Snapshot', 'Use cases', 'Integration layer already in the app', 'Content ideas', 'Sources'].map((h) => `## ${h}\nx`).join('\n')
+}
