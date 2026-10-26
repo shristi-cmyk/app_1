@@ -222,7 +222,9 @@ export async function renderHtmlDeck(brief, assets = {}) {
     .replace('__TYPED__', () => js(brief.mock.typed))
   // The final deck puts ink on the partner colour; a dark partner colour needs white instead.
   const lum = rgb(c).map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((t, v, i) => t + v * [0.2126, 0.7152, 0.0722][i], 0)
-  const darkFix = lum < 0.3 ? '<style>.v3{--lit-fg:#fff}.hero-q mark,.connect:not(.done){color:#fff}.mock .hero-lbl{color:var(--sec-tint)}@media print{.num{color:#fff !important}}</style>\n</head>' : '</head>'
+  // Embarko adds a dismissible badge at the bottom left of hosted pages; keep the Back button clear of it.
+  const hostFix = '<style>.controls{padding-left:136px}@media print{.controls{display:none}}</style>\n'
+  const darkFix = hostFix + (lum < 0.3 ? '<style>.v3{--lit-fg:#fff}.hero-q mark,.connect:not(.done){color:#fff}.mock .hero-lbl{color:var(--sec-tint)}@media print{.num{color:#fff !important}}</style>\n</head>' : '</head>')
   const marks = await MARKS
   return html.replace('</head>', () => darkFix).replace('<!--__SLIDES__-->', () => slides(brief, a, marks))
 }

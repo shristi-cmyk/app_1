@@ -70,17 +70,21 @@ export async function crawl(site) {
   const origin = new URL(site.url).origin
   const candidates = [...new Set([...linksOf(site.html, site.url), ...(await sitemapUrls(origin))])]
     .filter((u) => u !== site.url.replace(/\/+$/, '') && u !== origin)
-    .map((u) => ({ u, s: score(u) })).filter((c) => c.s > 0).sort((a, b) => b.s - a.s).slice(0, 8)
+    .map((u) => { const segs = new URL(u).pathname.split('/').filter(Boolean); return { u, top: segs[0] ?? '', s: score(u) - (segs.length - 1) * 3 } })
+    .filter((c) => score(c.u) > 0).sort((a, b) => b.s - a.s)
+  // At most two pages per section, so ten integration subpages can't crowd out product, use-case and pricing pages.
+  const perTop = {}
+  const picked = candidates.filter((c) => (perTop[c.top] = (perTop[c.top] ?? 0) + 1) <= 2).slice(0, 8)
   const pages = [home]
-  await Promise.all(candidates.map(async ({ u }) => {
+  await Promise.all(picked.map(async ({ u }) => {
     try { const p = await page(u); pages.push({ url: p.url, ...readSite(p.html) }) } catch { /* skip */ }
   }))
   return pages
 }
 
 // Apps a partner's site names: tells the AI what they already integrate with.
-const KNOWN_APPS = ['WhatsApp', 'Instagram', 'Facebook', 'Messenger', 'Telegram', 'Shopify', 'WooCommerce', 'Magento', 'BigCommerce', 'Razorpay', 'Stripe', 'PayU', 'PayPal', 'Cashfree', 'HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'LeadSquared', 'Freshdesk', 'Freshworks', 'Zendesk', 'Intercom', 'Google Sheets', 'Google Calendar', 'Google Drive', 'Gmail', 'Outlook', 'Microsoft Teams', 'Slack', 'Notion', 'Airtable', 'Calendly', 'Twilio', 'Mailchimp', 'Klaviyo', 'Jira', 'Asana', 'Trello', 'ClickUp', 'Monday', 'Supabase', 'Postgres', 'Firebase', 'OpenAI', 'Zapier', 'Make', 'Pabbly', 'n8n']
-export const mentions = (text) => KNOWN_APPS.filter((a) => new RegExp(`\\b${a.replace(/ /g, '\\s+')}\\b`, a === 'Make' ? '' : 'i').test(text))
+const KNOWN_APPS = ['WhatsApp', 'Instagram', 'Facebook', 'Messenger', 'Telegram', 'Shopify', 'WooCommerce', 'Magento', 'BigCommerce', 'Razorpay', 'Stripe', 'PayU', 'PayPal', 'Cashfree', 'HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'LeadSquared', 'Freshdesk', 'Freshworks', 'Zendesk', 'Intercom', 'Google Sheets', 'Google Calendar', 'Google Drive', 'Gmail', 'Outlook', 'Microsoft Teams', 'Slack', 'Notion', 'Airtable', 'Calendly', 'Twilio', 'Mailchimp', 'Klaviyo', 'Jira', 'Asana', 'Trello', 'ClickUp', 'Monday', 'Supabase', 'Postgres', 'Firebase', 'OpenAI', 'Zapier', 'Pabbly', 'n8n']
+export const mentions = (text) => KNOWN_APPS.filter((a) => new RegExp(`\\b${a.replace(/ /g, '\\s+')}\\b`, 'i').test(text))
 
 /** The brand colour: given, the site's theme-color, else the logo's dominant non-grey colour. */
 async function brandColor(given, themeColor, logo) {
@@ -121,6 +125,7 @@ Return ONLY a JSON object with exactly the keys and nesting of the example, rewr
 - problem.route is [partner name, "Automation tool", "customer’s apps"]: never name competitors. Every fact appears once. Keep lines as short as the example.
 - heroLines is the headline in three short lines. mock.product is a real screen or feature of the partner's product; mock.question marks one word in [brackets]; mock.typed is what a customer types there.
 - trigger.nodes is four [label, icon] pairs: icon is an app name above, "viasocket" or "partner"; the second is always ["viaSocket","viasocket"].
+- objections[0].apps lists apps the partner's own customers would plausibly ask for next, from the list above; never pad it with unrelated apps.
 - notes is five speaker-note strings. Leave partner exactly as given.`
 
 /** The product's AI drafts the brief from the partner's site, per run. */
