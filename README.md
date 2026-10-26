@@ -9,8 +9,8 @@ Template placeholders: `{{buyer_email}}`, `{{buyer_name}}`, `{{invoice_no}}`, `{
 
 | Name | Value |
 | --- | --- |
-| `VIASOCKET_ORG_ID` | `62791` |
-| `VIASOCKET_PROJECT_ID` | `projC9zfc2g2` |
+| `VIASOCKET_ORG_ID` | `78481` |
+| `VIASOCKET_PROJECT_ID` | `proj0VVTCTTP` |
 | `VIASOCKET_API_URL` | `https://flow-api.viasocket.com` |
 | `VIASOCKET_EMBED_SECRET` | from the viaSocket dashboard (Install Code). Server only. |
 | `APP_PASSWORD` | password for the browser login prompt (choose one) |
@@ -23,3 +23,7 @@ Template placeholders: `{{buyer_email}}`, `{{buyer_name}}`, `{{invoice_no}}`, `{
 ## Notes
 - State (connections and the active subscription) is a JSON file in `DATA_DIR`. On a host with ephemeral disk it resets on redeploy; reconnect and save again, or mount a volume.
 - The row handler runs on viaSocket, so new rows are processed even if this app is asleep.
+
+## Research agent (`/research`)
+
+Enter an application name and URL (plus optional context). The agent runs the master prompt in `lib/master-prompt.md` through viaSocket's Run AI Model and saves the report. Connect Slack inside the page, pick a channel from the list, and post any report there.
