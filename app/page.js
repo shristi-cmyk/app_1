@@ -99,7 +99,7 @@ export default function Home() {
   return (
     <main style={{ maxWidth: 860, margin: '0 auto', padding: 24 }}>
       <h1 style={{ marginTop: 0 }}>Integration use-case research</h1>
-      <p style={{ color: '#555' }}>Enter an application and its URL. The agent researches the product, verifies viaSocket coverage against the live viaSocket catalog and docs, and returns a source-backed report. Runs take several minutes.</p>
+      <p style={{ color: '#555' }}>Enter an application and its URL. The agent researches where an integration layer could fit inside the product and returns a short, source-backed report. Runs take several minutes.</p>
       <form onSubmit={run} style={card}>
         <label>Application name<input style={input} value={form.name} onChange={set('name')} required maxLength={120} placeholder="e.g. Cal.com" /></label>
         <label>Application URL<input style={input} value={form.url} onChange={set('url')} required type="url" placeholder="https://cal.com" /></label>
