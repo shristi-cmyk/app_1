@@ -1,6 +1,6 @@
 # viaSocket Integration Use-Case Research Agent
 
-Enter an application name and URL; the agent follows the viaSocket "Integration Use-Case Research Executive" master prompt (`lib/master-prompt.js`, verbatim) and returns a short, source-backed report: quick summary, use cases, content to create, where to use it, next steps and sources.
+Enter an application name and URL; the agent researches where viaSocket's integration layer could fit inside that app and returns a short, source-backed report. Prompts live in `lib/prompts.js`.
 
 Everything runs through viaSocket (the `viasocket-apps` package); there is no separate model key.
 
