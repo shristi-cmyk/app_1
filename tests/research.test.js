@@ -28,6 +28,7 @@ test('prompts: no HQ wording, wording rule present, no next-steps section', () =
   assert.match(REPORT_PROMPT, /## Integration layer already in the app/)
   assert.match(REPORT_PROMPT, /Listed automation partners \(outside the product\)/)
   assert.match(REPORT_PROMPT, /One row per use case from the Use cases table/)
+  assert.match(REPORT_PROMPT, /Existing integration layer inside the app: Yes/)
   assert.ok(!/^## Next steps/m.test(REPORT_PROMPT))
   assert.match(SHARED_RULES, /NOT an automation recipe/)
   assert.match(REPORT_PROMPT, /Where it fits in the app/)
