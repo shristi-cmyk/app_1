@@ -12,5 +12,5 @@ export function middleware(req) {
     const decoded = atob(encoded)
     if (decoded.slice(decoded.indexOf(':') + 1) === password) return NextResponse.next()
   }
-  return new NextResponse('Login required', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Invoice Mailer"' } })
+  return new NextResponse('Login required', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="Research Agent"' } })
 }

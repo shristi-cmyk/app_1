@@ -1,25 +1,21 @@
-# Invoice Mailer
+# viaSocket Integration Use-Case Research Agent
 
-When a new row is added to a Google Sheet, a PDF invoice is generated from a Google Docs template and emailed to the buyer with Gmail. Google access goes through viaSocket's embed (no Google OAuth code in this app).
+Enter an application name and URL; the agent follows the viaSocket "Integration Use-Case Research Executive" master prompt (`lib/master-prompt.js`, verbatim) and returns a source-backed report with the six required sections.
 
-Sheet columns: `buyer_email`, `buyer_name`, `invoice_no`, `amount`, `date`.
-Template placeholders: `{{buyer_email}}`, `{{buyer_name}}`, `{{invoice_no}}`, `{{amount}}`, `{{date}}`.
+- Research: Claude (`claude-opus-5-5`, adaptive thinking) with web search and web fetch.
+- viaSocket verification: read-only tools against viaSocket's public catalog and product docs (`lib/viasocket-tools.js`), so connector coverage and product capabilities are checked, not assumed. No embed secret or user connections are involved.
+- HQ agents: no communication tool exists here; the report says internal input was unavailable.
 
-## Environment variables (set these on the host; never commit them)
+## Environment variables (set on the host; never commit)
 
 | Name | Value |
 | --- | --- |
-| `VIASOCKET_ORG_ID` | `62791` |
-| `VIASOCKET_PROJECT_ID` | `projC9zfc2g2` |
-| `VIASOCKET_API_URL` | `https://flow-api.viasocket.com` |
-| `VIASOCKET_EMBED_SECRET` | from the viaSocket dashboard (Install Code). Server only. |
-| `APP_PASSWORD` | password for the browser login prompt (choose one) |
-| `DATA_DIR` | optional; folder for the small state file (use persistent storage) |
+| `ANTHROPIC_API_KEY` | Anthropic API key. Server only. |
+| `APP_PASSWORD` | Password for the browser login prompt (the app spends API credits, keep it private). |
+| `RESEARCH_MODEL` | Optional model override. |
 
 ## Run
 
 `npm install && npm run build && npm start` (reads `PORT`). Tests: `npm test`.
 
-## Notes
-- State (connections and the active subscription) is a JSON file in `DATA_DIR`. On a host with ephemeral disk it resets on redeploy; reconnect and save again, or mount a volume.
-- The row handler runs on viaSocket, so new rows are processed even if this app is asleep.
+Nothing is stored on disk; reports are downloadable as Markdown.

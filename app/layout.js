@@ -1,4 +1,4 @@
-export const metadata = { title: 'Invoice Mailer' }
+export const metadata = { title: 'Integration Use-Case Research' }
 
 export default function RootLayout({ children }) {
   return (
