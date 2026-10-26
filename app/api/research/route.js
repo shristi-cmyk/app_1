@@ -10,8 +10,9 @@ function validUrl(s) {
 
 // Streams NDJSON events: {t:'status'|'text'|'done'|'error', v}; 'done' carries the clean final report
 export async function POST(req) {
-  if (!process.env.VIASOCKET_ORG_ID || !process.env.VIASOCKET_PROJECT_ID || !process.env.VIASOCKET_EMBED_SECRET) {
-    return Response.json({ error: 'viaSocket is not configured on the server.' }, { status: 503 })
+  const missing = ['VIASOCKET_ORG_ID', 'VIASOCKET_PROJECT_ID', 'VIASOCKET_EMBED_SECRET'].filter((k) => !process.env[k])
+  if (missing.length) {
+    return Response.json({ error: `viaSocket is not configured on the server. Missing in .env: ${missing.join(', ')}. Save the file, then restart npm run dev.` }, { status: 503 })
   }
   const body = await req.json().catch(() => ({}))
   const name = String(body.name || '').trim().slice(0, 120)
