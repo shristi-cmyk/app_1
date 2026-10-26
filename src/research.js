@@ -100,7 +100,7 @@ const KNOWN_APPS = ['WhatsApp', 'Instagram', 'Facebook', 'Messenger', 'Telegram'
 export const mentions = (text) => KNOWN_APPS.filter((a) => new RegExp(`\\b${a.replace(/ /g, '\\s+')}\\b`, 'i').test(text))
 
 /** The brand colour: given, the site's theme-color, else the logo's dominant non-grey colour. */
-async function brandColor(given, themeColor, logo) {
+export async function brandColor(given, themeColor, logo) {
   const ok = (c) => {
     if (!c) return false
     const n = parseInt(c.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255
@@ -109,9 +109,21 @@ async function brandColor(given, themeColor, logo) {
   if (given) return { color: given, source: 'given' }
   if (ok(themeColor)) return { color: themeColor.toUpperCase(), source: 'site theme-color' }
   if (logo) {
-    const { dominant: { r, g, b } } = await sharp(Buffer.from(logo.split(',')[1], 'base64')).stats()
-    const c = '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()
-    if (ok(c)) return { color: c, source: 'logo' }
+    // The most common saturated colour among the logo's visible pixels (white, black, greys and transparency ignored).
+    const { data, info } = await sharp(Buffer.from(logo.split(',')[1], 'base64')).resize(64, 64, { fit: 'inside' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+    const buckets = new Map()
+    for (let i = 0; i < data.length; i += info.channels) {
+      const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]]
+      if (a < 200 || Math.max(r, g, b) - Math.min(r, g, b) < 50 || Math.max(r, g, b) < 40) continue
+      const k = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4)
+      const e = buckets.get(k) ?? { n: 0, r: 0, g: 0, b: 0 }
+      e.n++; e.r += r; e.g += g; e.b += b; buckets.set(k, e)
+    }
+    const top = [...buckets.values()].sort((x, y) => y.n - x.n)[0]
+    if (top && top.n >= 8) {
+      const c = '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('').toUpperCase()
+      if (ok(c)) return { color: c, source: 'logo' }
+    }
   }
   return null
 }
