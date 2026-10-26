@@ -15,16 +15,29 @@ async function page(url) {
   return { url: res.url, html: await res.text() }
 }
 
-/** The partner's site: given, or the first of name.com / .ai / .io / .in / .co that answers. */
+/**
+ * The partner's site. Given: use it. Otherwise try name.com/.ai/.io/.in/.co; when several answer,
+ * pick the one that matches viaSocket's catalog description of the app, and ask when none clearly does.
+ */
 async function findSite(name, domain) {
-  const tries = domain ? [domain] : ['com', 'ai', 'io', 'in', 'co'].map((tld) => `${slug(name)}.${tld}`)
-  for (const d of tries) {
-    try {
-      const hit = await page(`https://${d.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`)
-      return { domain: new URL(hit.url).host, ...hit }
-    } catch { /* next */ }
+  const clean = (d) => d.replace(/^https?:\/\//, '').replace(/\/+$/, '')
+  if (domain) {
+    try { const hit = await page(`https://${clean(domain)}`); return { domain: new URL(hit.url).host, ...hit } } catch { return null }
   }
-  return null
+  const tries = ['com', 'ai', 'io', 'in', 'co'].map((tld) => `${slug(name)}.${tld}`)
+  const hits = (await Promise.all(tries.map(async (d) => { try { const hit = await page(`https://${d}`); return { domain: new URL(hit.url).host, ...hit } } catch { return null } }))).filter(Boolean)
+  const sites = [...new Map(hits.map((h) => [h.domain.replace(/^www\./, ''), h])).values()]
+  if (sites.length <= 1) return sites[0] ?? null
+  let about = ''
+  try { about = (await viasocket().catalog.search(name)).find((a) => slug(a.name) === slug(name))?.description ?? '' } catch { /* catalog unreachable */ }
+  const words = new Set(about.toLowerCase().match(/[a-z]{5,}/g) ?? [])
+  const ranked = sites.map((site) => {
+    const info = readSite(site.html)
+    const text = `${info.title ?? ''} ${info.description ?? ''} ${info.text.slice(0, 3000)}`.toLowerCase()
+    return { site, score: [...words].filter((w) => text.includes(w)).length }
+  }).sort((a, b) => b.score - a.score)
+  if (ranked[0].score >= 2 && ranked[0].score >= ranked[1].score * 2) return ranked[0].site
+  return { ambiguous: sites.map((x) => x.domain) }
 }
 
 const meta = (html, re) => re.exec(html)?.[1]?.trim()
@@ -155,7 +168,11 @@ async function draftBrief(uid, partner, pages, apps, context) {
  */
 export async function research({ name, domain, color, context, uid = 'anonymous' }) {
   const isAisensy = slug(name) === 'aisensy'
-  const site = await findSite(name, domain ?? (isAisensy ? 'aisensy.com' : undefined))
+  const found = await findSite(name, domain ?? (isAisensy ? 'aisensy.com' : undefined))
+  if (found?.ambiguous) {
+    return { missing: [{ field: 'domain', name, hint: `More than one company uses the name ${name}: ${found.ambiguous.join(', ')}. Which website is the right one?`, options: found.ambiguous }], found: {} }
+  }
+  const site = found
   const host = site?.domain ?? domain
   // AiSensy's content is fixed by the final deck, so its site is not crawled.
   const pages = site && !isAisensy ? await crawl(site) : site ? [{ url: site.url, ...readSite(site.html) }] : []

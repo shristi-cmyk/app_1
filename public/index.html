@@ -87,12 +87,13 @@ function askNeeds(name, missing) {
   for (const m of missing) {
     const row = document.createElement('div'); row.className = 'row'
     const label = document.createElement('label'); label.style.flex = '1 1 100%'; label.textContent = m.hint
-    const input = document.createElement(m.field === 'context' ? 'textarea' : 'input'); input.placeholder = m.field === 'color' ? '#07CF65' : m.field === 'context' ? 'Postgres backend platform for AI apps; developers use it to…' : 'https://…'
+    const input = document.createElement(m.field === 'context' ? 'textarea' : 'input'); input.placeholder = m.field === 'color' ? '#07CF65' : m.field === 'context' ? 'Postgres backend platform for AI apps; developers use it to…' : m.field === 'domain' ? (m.options?.[0] ?? 'example.com') : 'https://…'
     const ok = document.createElement('button'); ok.className = 'ghost'; ok.style.margin = '0'; ok.textContent = 'Use this'
     ok.onclick = async () => {
       try {
         if (m.field === 'color') extra.color = input.value.trim()
         else if (m.field === 'context') $('appContext').value = input.value.trim()
+        else if (m.field === 'domain') $('appDomain').value = input.value.trim()
         else await api('/api/assets', { name: m.name, field: m.field, url: input.value.trim() })
         row.remove(); if (!$('needAsk').children.length) buildLink()
       } catch (e) { alert(e.message) }
