@@ -6,6 +6,8 @@ import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web
 import { scanPlatforms, siteLinks, LAYER_PROVIDER_DOMAINS } from '../lib/gather.js'
 import { SHARED_RULES, REPORT_PROMPT } from '../lib/prompts.js'
 import { acquire, resetLimits } from '../lib/limits.js'
+import { markdownToText } from '../lib/plaintext.js'
+import { readVisitorId, newVisitor } from '../lib/visitor.js'
 
 test('markdown escapes html and only links http(s)', () => {
   const h = renderMarkdown('<script>x</script> [a](javascript:alert(1)) [b](https://x.io/p)')
@@ -113,4 +115,24 @@ test('listings never reach the integration-layer table; checks say what ran', ()
   assert.deepEqual(t.integration_layers.map((l) => l.provider), ['Paragon'])
   assert.deepEqual(t.listed_automation_partners.map((l) => l.name), ['Zapier', 'viaSocket'])
   assert.match(layerChecks({ searches: [{ key: 'poweredBy', error: 'not connected' }] }), /NOT checked/)
+})
+
+test('plain text: headings, lists, tables and links read cleanly', () => {
+  const t = markdownToText('## Use cases\n\n- **Strong** one\n\n| A | B |\n|---|---|\n| 1 | [x](https://x.io) |\n\n_Italic note_')
+  assert.ok(!t.includes('##') && !t.includes('**') && !t.includes('|---'))
+  assert.match(t, /Use cases/)
+  assert.match(t, /• Strong one/)
+  assert.match(t, /1  \|  x \(https:\/\/x\.io\)/)
+  assert.match(t, /Italic note/)
+})
+
+test('visitor id: random, cookie-bound, httpOnly', () => {
+  const req = new Request('http://localhost:3000/api/google')
+  const v = newVisitor(req)
+  assert.match(v.id, /^[a-f0-9]{32}$/)
+  assert.match(v.cookie, /HttpOnly/)
+  assert.ok(!/Secure/.test(v.cookie))
+  assert.equal(readVisitorId(new Request('http://localhost/', { headers: { cookie: `a=1; rv=${v.id}` } })), v.id)
+  assert.equal(readVisitorId(new Request('http://localhost/', { headers: { cookie: 'rv=../../etc' } })), null)
+  assert.match(newVisitor(new Request('http://x/', { headers: { 'x-forwarded-proto': 'https' } })).cookie, /Secure/)
 })

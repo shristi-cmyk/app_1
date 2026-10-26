@@ -1,6 +1,9 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { connect, loadConnectScript } from 'viasocket-apps/browser'
 import { renderMarkdown } from '../lib/markdown.js'
+
+const DOCS_ICON = 'https://stuff.thingsofbrand.com/google.com/images/imgc_Google_Docs.png'
 
 const card = { background: '#fff', borderRadius: 12, padding: 20, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,.08)' }
 const input = { width: '100%', padding: 10, borderRadius: 8, border: '1px solid #ccd', boxSizing: 'border-box', font: 'inherit', marginBottom: 12 }
@@ -13,11 +16,50 @@ export default function Home() {
   const [report, setReport] = useState('')
   const [error, setError] = useState('')
   const abort = useRef(null)
+  const [google, setGoogle] = useState(null) // { serviceId, actions, token, connected, expired, authId }
+  const [doc, setDoc] = useState({ busy: false, url: '', error: '' })
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+
+  // Fetched on page load, not in the click: the Connect popup must open straight from the click or the browser blocks it.
+  async function loadGoogle() {
+    try {
+      const r = await fetch('/api/google', { cache: 'no-store' })
+      const j = await r.json()
+      if (r.ok) { setGoogle(j); return j }
+    } catch {}
+    return null
+  }
+
+  useEffect(() => { loadGoogle(); loadConnectScript().catch(() => {}) }, [])
+
+  async function saveToGoogleDoc() {
+    setDoc({ busy: true, url: '', error: '' })
+    try {
+      let g = google
+      if (!g?.connected || g.expired) {
+        const finish = () => loadGoogle()
+        try {
+          await connect({ embedToken: g.token, serviceId: g.serviceId, actions: g.actions, skipActionSelection: true, authId: g.expired ? g.authId : undefined, onLateSuccess: finish })
+        } catch (e) {
+          if (e.code === 'closed') { setDoc({ busy: false, url: '', error: '' }); return } // not a failure: a late success may still follow
+          throw e
+        }
+        g = await loadGoogle()
+        if (!g?.connected) throw new Error('Google Docs is not connected yet.')
+      }
+      const title = `${form.name} — integration research (${new Date().toISOString().slice(0, 10)})`
+      const res = await fetch('/api/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, report }) })
+      const j = await res.json()
+      if (!res.ok) { if (j.error === 'not_connected' || j.error === 'expired') await loadGoogle(); throw new Error(j.error === 'not_connected' ? 'Connect Google Docs first.' : j.error === 'expired' ? 'Your Google connection expired. Click again to reconnect.' : j.error) }
+      setDoc({ busy: false, url: j.url, error: '' })
+    } catch (err) {
+      setDoc({ busy: false, url: '', error: err.message })
+    }
+  }
 
   async function run(e) {
     e.preventDefault()
-    setRunning(true); setError(''); setReport(''); setStatus([])
+    setRunning(true); setError(''); setReport(''); setStatus([]); setDoc({ busy: false, url: '', error: '' })
     abort.current = new AbortController()
     try {
       const res = await fetch('/api/research', {
@@ -71,7 +113,17 @@ export default function Home() {
       {error && <div style={{ ...card, background: '#fdecec', color: '#8a1f1f' }}>{error}</div>}
       {report && (
         <div style={card}>
-          {!running && <button style={{ ...button, marginBottom: 12 }} onClick={download}>Download .md</button>}
+          {!running && (
+            <div style={{ marginBottom: 12 }}>
+              <button style={{ ...button, background: '#1a73e8', display: 'inline-flex', alignItems: 'center', gap: 8, opacity: doc.busy || !google ? 0.6 : 1 }} disabled={doc.busy || !google} onClick={saveToGoogleDoc}>
+                <img src={DOCS_ICON} alt="" width={18} height={18} style={{ background: '#fff', borderRadius: 3 }} />
+                {doc.busy ? 'Saving…' : google?.connected && !google.expired ? 'Save as Google Doc' : 'Connect Google Docs and save'}
+              </button>
+              <button style={{ ...button, background: '#555', marginLeft: 8 }} onClick={download}>Download .md</button>
+              {doc.url && <p style={{ margin: '10px 0 0' }}>Saved to your Google Drive: <a href={doc.url} target="_blank" rel="noopener noreferrer">open the document</a></p>}
+              {doc.error && <p style={{ margin: '10px 0 0', color: '#8a1f1f' }}>{doc.error}</p>}
+            </div>
+          )}
           <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(report) }} />
         </div>
       )}

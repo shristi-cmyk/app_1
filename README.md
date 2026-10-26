@@ -7,6 +7,7 @@ Everything runs through viaSocket (the `viasocket-apps` package); there is no se
 - **AI:** `user.ai.send` (model via viaSocket; default `anthropic` / `claude-opus-4-7`), sent with `delivery: "rtlayer"` and the answer read from thread history, so no long HTTP call is held open. Threads belong to one stable owner id (`research-agent-owner`).
 - **Evidence:** the app's own site and help docs (fetched directly, honest user agent, SSRF-guarded), web search with page text through viaSocket's Tavily app (owner connects it once at `/setup?key=SETUP_KEY`), and a scan for integration platforms in and around the app.
 - **Steps:** read reviews, map the integration landscape, then write a short report: snapshot, use cases (where the integration layer fits inside the app), what customers ask for, integration layer already in the app, content ideas, sources.
+- **Save as Google Doc:** each visitor connects their own Google account through viaSocket (Connect popup, no Google OAuth code here) and the report is saved as a plain-text Google Doc in their Drive root (`Create Document From Text`). The visitor is identified only by a random httpOnly cookie; the server looks the connection up each time, so nothing is stored. Needs `plug-service.viasocket.com` reachable (slug lookup).
 - **Other agents:** none can be contacted during a run; the report notes once that other relevant agents will be consulted next.
 
 ## Environment variables (set on the host; never commit)
