@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { renderMarkdown } from '../lib/markdown.js'
-import { checkReport, fit, packBlocks, reviewsMessage, MAX_MESSAGE_CHARS } from '../lib/agent.js'
+import { checkReport, fit, packBlocks, reviewsMessage, noReviews, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
 import { scanPlatforms, siteLinks } from '../lib/gather.js'
 import { SHARED_RULES, REPORT_PROMPT } from '../lib/prompts.js'
@@ -82,4 +82,10 @@ test('limits: per-IP hourly cap and concurrency', () => {
   assert.equal(acquire('3.3.3.3').ok, true)
   assert.equal(acquire('4.4.4.4').ok, false) // 2 concurrent already held
   resetLimits()
+})
+
+test('no review text: the reason is stated and no site is named', () => {
+  const v = noReviews({ searches: [{ key: 'reviews', error: 'Web search is not connected yet (open /setup).' }] })
+  assert.deepEqual(v.sources_checked, [])
+  assert.match(v.bottom_line, /not connected/)
 })
