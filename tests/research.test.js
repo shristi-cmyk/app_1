@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { renderMarkdown, splitAtUseCases } from '../lib/markdown.js'
-import { useCasesSection, sanitizeVisual } from '../lib/visual.js'
+import { useCasesSection, sanitizeVisual, KINDS } from '../lib/visual.js'
 import { toHex, isBrandy, colorsIn, pickColors, brandMeta, googleFont, extractTheme, sanitizeTheme } from '../lib/theme.js'
 import { checkReport, fit, packBlocks, reviewsMessage, noReviews, tidyLandscape, layerChecks, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
@@ -206,4 +206,15 @@ test('markdown: italic lines render, snake_case words stay plain', () => {
   assert.match(renderMarkdown('_Other agents will also review this._'), /<em>Other agents will also review this\.<\/em>/)
   assert.ok(!renderMarkdown('see my_var_name here').includes('<em>'))
   assert.match(renderMarkdown('a **bold** and _soft_ text'), /<strong>bold<\/strong> and <em>soft<\/em> text/)
+})
+
+test('each use case keeps a known picture kind and a short moment', () => {
+  const v = sanitizeVisual({ cases: [
+    { title: 'A', area: 'x', menu: 'm1', gets: 'g', apps: ['CRM'], strength: 'Strong', kind: 'agent', moment: 'Book me a slot please, thanks a lot, really' },
+    { title: 'B', area: 'x', menu: 'm2', gets: 'g', apps: ['CRM'], strength: 'Strong', kind: 'spaceship' },
+    { title: 'C', area: 'x', menu: 'm3', gets: 'g', apps: ['CRM'], strength: 'Strong' },
+  ] })
+  assert.deepEqual(v.cases.map((c) => c.kind), ['agent', 'marketplace', 'marketplace'])
+  assert.ok(v.cases[0].moment.length <= 28)
+  assert.deepEqual(KINDS, ['marketplace', 'agent', 'workflow', 'events', 'partner'])
 })
