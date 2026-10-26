@@ -34,6 +34,7 @@ export async function POST(req) {
           signal: req.signal,
         })
         send('visual', report.visual)
+        if (report.visualNote) send('notice', report.visualNote)
         send('done', report.report)
       } catch (e) {
         try { send('error', String(e.message || e)) } catch {}

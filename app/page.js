@@ -16,6 +16,7 @@ export default function Home() {
   const [status, setStatus] = useState([])
   const [report, setReport] = useState('')
   const [visual, setVisual] = useState(null)
+  const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const abort = useRef(null)
   const [google, setGoogle] = useState(null) // { serviceId, actions, token, connected, expired, authId }
@@ -61,7 +62,7 @@ export default function Home() {
 
   async function run(e) {
     e.preventDefault()
-    setRunning(true); setError(''); setReport(''); setVisual(null); setStatus([]); setDoc({ busy: false, url: '', error: '' })
+    setRunning(true); setError(''); setReport(''); setVisual(null); setNotice(''); setStatus([]); setDoc({ busy: false, url: '', error: '' })
     abort.current = new AbortController()
     try {
       const res = await fetch('/api/research', {
@@ -81,6 +82,7 @@ export default function Home() {
           const ev = JSON.parse(l)
           if (ev.t === 'status') setStatus((s) => [...s.slice(-5), ev.v])
           else if (ev.t === 'visual') setVisual(ev.v)
+          else if (ev.t === 'notice') setNotice(ev.v)
           else if (ev.t === 'done') setReport(ev.v)
           else if (ev.t === 'error') setError(ev.v)
         }
@@ -133,6 +135,7 @@ export default function Home() {
               <>
                 <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(before) }} />
                 {visual && <UseCaseSlideshow data={visual} />}
+                {!visual && notice && <p style={{ color: '#8a5a00', background: '#fff7e6', padding: '8px 12px', borderRadius: 8, fontSize: 14 }}>{notice}</p>}
                 {after && <div className="report" dangerouslySetInnerHTML={{ __html: renderMarkdown(after) }} />}
               </>
             )
