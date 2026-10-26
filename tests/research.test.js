@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { renderMarkdown } from '../lib/markdown.js'
-import { checkReport, fit, packBlocks, reviewsMessage, noReviews, MAX_MESSAGE_CHARS } from '../lib/agent.js'
+import { checkReport, fit, packBlocks, reviewsMessage, noReviews, tidyLandscape, layerChecks, MAX_MESSAGE_CHARS } from '../lib/agent.js'
 import { isPrivateIp, htmlToText, assertPublicUrl, rootDomain } from '../lib/web.js'
 import { scanPlatforms, siteLinks, LAYER_PROVIDER_DOMAINS } from '../lib/gather.js'
 import { SHARED_RULES, REPORT_PROMPT } from '../lib/prompts.js'
@@ -99,4 +99,17 @@ test('no review text: the reason is stated and no site is named', () => {
   const v = noReviews({ searches: [{ key: 'reviews', error: 'Web search is not connected yet (open /setup).' }] })
   assert.deepEqual(v.sources_checked, [])
   assert.match(v.bottom_line, /not connected/)
+})
+
+test('listings never reach the integration-layer table; checks say what ran', () => {
+  const t = tidyLandscape({
+    integration_layers: [
+      { provider: 'viaSocket', type: 'automation tool (in-product offering)', confidence: 'unclear', url: 'u1' },
+      { provider: 'Paragon', type: 'in-app integration layer', confidence: 'confirmed', url: 'u2' },
+    ],
+    listed_automation_partners: [{ name: 'Zapier', url: 'u3' }],
+  })
+  assert.deepEqual(t.integration_layers.map((l) => l.provider), ['Paragon'])
+  assert.deepEqual(t.listed_automation_partners.map((l) => l.name), ['Zapier', 'viaSocket'])
+  assert.match(layerChecks({ searches: [{ key: 'poweredBy', error: 'not connected' }] }), /NOT checked/)
 })
