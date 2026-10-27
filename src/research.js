@@ -270,7 +270,16 @@ export async function research({ name, domain, color, context, presenterName, ca
   const isSelf = (n) => { const a = slugOf(n), b = slugOf(name); return a === b || a.startsWith(b) || (a.length >= 4 && b.startsWith(a)) }
   const named = new Set(namedAll.filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n)))
   // "Already in": only recognisable apps spelled the catalog's way in the partner's text, so everyday words don't pass.
-  const exactNamed = ((await namesIn(allText, { exact: true, top: 600 })) ?? []).filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n) && !/[.]/.test(n))
+  // A name only counts as "already in" when it sits near integration wording ("integrates with", "connect", "sync"…),
+  // so an everyday word that is also an app's name (a plan called "Scale") does not.
+  const nearIntegration = (n) => {
+    const re = /integrat|connect|sync|works? with|plugin|marketplace|\bapps?\b|supports?\b/i
+    for (let i = allText.indexOf(n); i !== -1; i = allText.indexOf(n, i + n.length)) {
+      if (re.test(allText.slice(Math.max(0, i - 90), i + n.length + 90))) return true
+    }
+    return false
+  }
+  const exactNamed = ((await namesIn(allText, { exact: true, top: 600 })) ?? []).filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n) && !/[.]/.test(n) && nearIntegration(n))
 
   // Logo: the bundled preset logo, then crawl the site, then viaSocket's catalog icon for the app.
   let logo = isAisensy ? { data: `image/png;base64,${readFileSync(new URL('./presets/aisensy.png', import.meta.url)).toString('base64')}`, source: 'AiSensy final deck' } : null
