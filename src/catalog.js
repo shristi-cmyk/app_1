@@ -88,10 +88,12 @@ const COMMON = new Set(['calendar', 'email', 'forms', 'form', 'chat', 'tasks', '
  * Catalog apps whose names appear in `text`, most-used app first (the catalog's own order).
  * Whole-word match on lower-cased words, names of up to three words, everyday words skipped.
  */
-export async function namesIn(text) {
+export async function namesIn(text, { exact = false, top = Infinity } = {}) {
   let idx
   try { idx = await load() } catch { return null }
-  const words = String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? []
+  // exact: keep the text's own capitalisation and match the catalog's own spelling, so the everyday word "scale"
+  // does not count as the app "Scale"; top: only the most-used apps (the catalog's order), which are the recognisable ones.
+  const words = (exact ? String(text ?? '') : String(text ?? '').toLowerCase()).match(/[A-Za-z0-9]+/g) ?? []
   const grams = new Set()
   for (let i = 0; i < words.length; i++) {
     let g = words[i]
@@ -99,9 +101,10 @@ export async function namesIn(text) {
     for (let n = 1; n < 3 && i + n < words.length; n++) { g += ' ' + words[i + n]; grams.add(g) }
   }
   const found = []
-  for (const a of idx.apps) {
-    const key = String(a.name ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-    if (key.length < 4 || COMMON.has(key) || key.split(' ').length > 3) continue
+  for (const a of idx.apps.slice(0, top)) {
+    const own = String(a.name ?? '').replace(/[^A-Za-z0-9]+/g, ' ').trim()
+    const key = exact ? own : own.toLowerCase()
+    if (key.length < 4 || COMMON.has(key.toLowerCase()) || key.split(' ').length > 3) continue
     if (grams.has(key) && !found.includes(a.name.trim())) found.push(a.name.trim())
   }
   return found

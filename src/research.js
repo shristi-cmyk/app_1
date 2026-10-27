@@ -266,7 +266,11 @@ export async function research({ name, domain, color, context, presenterName, ca
   const apps = mentions(allText)
   // Every app viaSocket lists whose name the partner's own pages contain: these are never suggested.
   const namedAll = (await namesIn(allText)) ?? apps
-  const named = new Set(namedAll.filter((n) => !NOT_APPS.has(n.toLowerCase()) && slugOf(n) !== slugOf(name)))
+  // The partner itself can be in the catalog (even as "Powabase.ai"): never treat its own name as an app it integrates.
+  const isSelf = (n) => { const a = slugOf(n), b = slugOf(name); return a === b || a.startsWith(b) || (a.length >= 4 && b.startsWith(a)) }
+  const named = new Set(namedAll.filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n)))
+  // "Already in": only recognisable apps spelled the catalog's way in the partner's text, so everyday words don't pass.
+  const exactNamed = ((await namesIn(allText, { exact: true, top: 600 })) ?? []).filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n) && !/[.]/.test(n))
 
   // Logo: the bundled preset logo, then crawl the site, then viaSocket's catalog icon for the app.
   let logo = isAisensy ? { data: `image/png;base64,${readFileSync(new URL('./presets/aisensy.png', import.meta.url)).toString('base64')}`, source: 'AiSensy final deck' } : null
@@ -300,7 +304,7 @@ export async function research({ name, domain, color, context, presenterName, ca
     }
     brief.appNotes = await finalizeApps(brief, named)
     // "Already in <partner>": the most-used apps the partner's site names (not automation tools or its own channels).
-    brief.haveApps = [...named].slice(0, 4)
+    brief.haveApps = exactNamed.slice(0, 4)
   }
 
   const brands = {}
