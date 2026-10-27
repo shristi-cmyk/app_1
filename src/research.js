@@ -2,7 +2,7 @@ import sharp from 'sharp'
 import { readFileSync } from 'node:fs'
 import * as icons from './icons.js'
 import { viasocket } from './viasocket.js'
-import { AISENSY_FINAL, genericBrief, calLink, cleanExtras, cleanRegions, EXTRA_CAPABILITIES } from './htmldeck.js'
+import { AISENSY_FINAL, genericBrief, calLink, cleanExtras, cleanRegions, fixedWording, EXTRA_CAPABILITIES } from './htmldeck.js'
 import { lookup, listed } from './catalog.js'
 
 const UA = { 'user-agent': 'Mozilla/5.0 (compatible; PartnershipDeckManager/1.0)' }
@@ -156,16 +156,15 @@ async function brandSvg(name) {
 const BRIEF_PROMPT = `You write the content of slides 1-5 of a pitch deck for viaSocket's embed partnership ("Your UI. viaSocket's engine."): the partner embeds viaSocket so their own customers connect 2,300+ apps inside the partner's product, and the partner's product and AI agents can use those apps as tools. (Slide 6, about viaSocket, is fixed.)
 Return ONLY a JSON object with exactly the keys and nesting of the example, rewritten for the partner from what their site says they do.
 
-About viaSocket (from viasocket.com). viaSocket is an integration layer for products and AI agents: "You build the app or agent. viaSocket handles the connections and actions." You may rely on these facts and no others: 2,300+ app integrations; managed authentication (the app's own consent screen, tokens encrypted and refreshed); managed data mapping; triggers and webhooks (events from connected apps, polling and retries handled); multi-tenant (separate connected accounts per customer); custom branding (the partner's logo, colours and domain); AI agents with 50+ AI models, memory, connected apps as tools and multi-step workflows; in-app AI chatbots; browser actions (an agent can browse and act on sites with no API); real-time, background and scheduled execution with retries; execution monitoring, debugging and replay; regional deployment; MCP support; custom integrations and API requests; a missing app can be built once as a custom connector in the Plug Builder, or requested from the viaSocket team; every plan includes unlimited connected accounts, users, workflows and projects. Never state prices, plan limits, timings (such as "15 minutes"), customer counts, or that viaSocket itself builds an integration on request.
+About viaSocket (from viasocket.com). viaSocket is an integration layer for products and AI agents: "You build the app or agent. viaSocket handles the connections and actions." You may rely on these facts and no others: 2,300+ app integrations; managed authentication (the app's own consent screen, tokens encrypted and refreshed); managed data mapping; triggers and webhooks (events from connected apps, polling and retries handled); multi-tenant (separate connected accounts per customer); custom branding (the partner's logo, colours and domain); AI agents with 50+ AI models, memory, connected apps as tools and multi-step workflows; in-app AI chatbots; browser actions (an agent can browse and act on sites with no API); real-time, background and scheduled execution with retries; execution monitoring, debugging and replay; regional deployment; MCP support; custom integrations and API requests; a missing app can be built once as a custom connector in the Plug Builder, or requested from the viaSocket team. Never state prices, plan limits, "unlimited" anything, timings (such as "15 minutes"), customer counts, or that viaSocket itself builds an integration on request.
 
 Rules:
 - Find the partner's real use case: what their customers ask their product for that lives in another app.
-- Customer questions (problem.asks), the demo and the trigger strip name only these apps: Shopify, WooCommerce, HubSpot, Zoho CRM, Zoho Desk, Freshdesk, Zendesk, Salesforce, Razorpay, Stripe, Cashfree, Google Sheets, Google Calendar, Gmail, Slack, WhatsApp.
-- problem.title speaks to the partner's product and, when it has them, its agents: "Your product and agents can answer. Can they act?" (without agents: "Your product can answer. Can it act?"). problem.detour is one short line: "A detour outside <partner>, unusable by your product or agents." (say "your product" only if it has no agents).
-- problem.route is [partner name, "Automation tool", "customer’s apps"]: never name competitors. Every fact appears once. Keep lines as short as the example.
-- heroLines is the headline in three short lines: "Give <partner> and its agents the power to act" when the partner has agents, else "Give <partner>’s users the power to act". mock.product is a real screen or feature of the partner's product; mock.question marks one word in [brackets]; mock.typed is what a customer types there.
+- problem.asks is four things the partner's own customers want, each a one-line wish in the customer's voice starting with a verb ("Sync my Shopify orders into <partner>", "Add every new lead to HubSpot"), drawn from what the partner's site shows, with a sub-line "<pattern> · <App>". <pattern> is one of "Sync data in", "Trigger an action", "Update an app", "Agent action", "Cross-app workflow"; <App> is ONE app from: Shopify, WooCommerce, HubSpot, Zoho CRM, Zoho Desk, Freshdesk, Zendesk, Salesforce, Razorpay, Stripe, Cashfree, Google Sheets, Google Calendar, Gmail, Slack, WhatsApp. At most one "Agent action", and only if the partner has agents. The demo and the trigger strip use apps from the same list.
+- Fixed wording: copy subtitle, problem.title, problem.route, problem.detour, objections[0].answer, objections[0].body, objections[1].answer and objections[1].body exactly from the example with the partner's name swapped in; they are overwritten anyway. Never name competing automation tools. Every fact appears once. Keep lines as short as the example.
+- heroLines is the headline in three short lines: "Give <partner> and its agents the power to act" when the partner has agents, else "Give <partner>’s users the power to act". mock.product must be a screen or feature name that appears on the partner's own site; if none does, use "Workspace". mock.question marks one word in [brackets]; mock.typed is what a customer types there.
 - trigger.nodes is four [label, icon] pairs: icon is an app name from the list above, "viasocket" or "partner"; the second is always ["viaSocket","viasocket"].
-- objections[0].body is exactly: "Wherever your customers are, we likely have it. If not, add it as a custom connector or request it." objections[1].body is exactly: "No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan."
+- objections[0].quote reflects integrations the partner's own site lists (for example "We already have an API and MCP."); if the site lists none, it is "We already have some integrations."
 - objections[0].apps lists up to six real apps the partner's own customers would plausibly ask for next (any well-known apps, not only the list above); they are checked against viaSocket's catalog and dropped if absent. Never pad it.
 - regions is [] unless the partner's own site clearly shows customers in several countries or regions. Then give 2 or 3 { "label": <country or region, under 14 characters>, "apps": <3 or 4 apps that customers in that region favour over the other regions, any category, checked against viaSocket's catalog> }. Local favourites only (for example India: Razorpay, Zoho CRM, Cashfree; US: Stripe, HubSpot, Salesforce; Europe: Mollie, Pipedrive, Xero). Never list global apps such as Shopify, WooCommerce, Google Sheets, Google Calendar, Gmail, Slack or WhatsApp in a region, and never repeat an app across regions. If you cannot tell the regions apart this way, regions is []. When regions has rows, objections[0].apps may be [].
 - extras is [] unless the partner's own site shows a real need for one of these other viaSocket capabilities: ${EXTRA_CAPABILITIES.join(', ')}. Meanings: "Browser actions" = an agent can browse and act on websites that have no API; "50+ AI models" = AI agents on viaSocket can choose from 50+ AI models, so the partner needn't wire up each model; "Memory" = agents keep memory; "Scheduled execution" = actions run at set intervals without a user triggering them. Add at most two, as { "label": <one name from that list, exactly>, "text": <one short line, under 90 characters> }. Each line must rest on something the partner's site actually says it does; if you cannot point to that, leave extras empty. Never add one to fill the slide, and never describe how it works beyond its meaning above. Triggers (app events starting flows) are already the slide's "Listen" row: use them in the trigger strip, never as an extra.
@@ -190,6 +189,13 @@ async function verifyApps(brief) {
   const keep = (list) => (list ?? []).filter((a) => (have ? (have.has(a) ? true : (dropped.push(a), false)) : true))
   if (brief.objections?.[0]) brief.objections[0].apps = keep(brief.objections[0].apps)
   brief.regions = have ? cleanRegions((brief.regions ?? []).map((r) => ({ label: r?.label, apps: keep(r?.apps) }))) : []
+  // Slide 2's four wishes each name one app after the "·"; drop wishes whose app viaSocket doesn't list (if four-minus-drops stays at 3 or more).
+  const askApp = (a) => String(a?.[1] ?? '').split('·').pop().trim()
+  const askNames = (brief.problem?.asks ?? []).map(askApp).filter(Boolean)
+  const haveAsks = askNames.length ? await listed(askNames) : new Set()
+  const goodAsks = (brief.problem?.asks ?? []).filter((a) => (haveAsks ? haveAsks.has(askApp(a)) : true))
+  if (haveAsks && goodAsks.length >= 3) { for (const a of brief.problem.asks) if (!goodAsks.includes(a)) dropped.push(askApp(a)); brief.problem.asks = goodAsks }
+  else if (haveAsks && goodAsks.length < (brief.problem?.asks ?? []).length) brief.unverifiedAsks = (brief.problem.asks).filter((a) => !goodAsks.includes(a)).map(askApp)
   return dropped
 }
 
@@ -211,9 +217,14 @@ async function draftBrief(uid, partner, pages, apps, context) {
   const b = reply.content
   const ok = b && typeof b === 'object' && b.heroLines?.length && b.problem?.asks?.length && b.problem?.route?.length === 3 && b.mock?.typed && b.trigger?.nodes?.length && b.objections?.length === 2 && b.notes?.length === 5
   if (!ok) throw new Error('AI draft incomplete')
-  // The two objection answers are fixed wording, not the AI's.
-  b.objections[0].body = 'Wherever your customers are, we likely have it. If not, add it as a custom connector or request it.'
-  b.objections[1].body = 'No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan.'
+  // Fixed wording is the same for every partner; it is not the AI's to rewrite.
+  const fx = fixedWording(partner.name)
+  b.subtitle = fx.subtitle
+  b.problem.title = fx.title
+  b.problem.route = fx.route
+  b.problem.detour = fx.detour
+  b.objections[0].answer = fx.answers[0]; b.objections[0].body = fx.bodies[0]
+  b.objections[1].answer = fx.answers[1]; b.objections[1].body = fx.bodies[1]
   const dropped = await verifyApps(b)
   return { ...b, partner, extras: cleanExtras(b.extras), appsDropped: dropped }
 }
@@ -290,10 +301,21 @@ export async function research({ name, domain, color, context, presenterName, ca
     if (svg) brands[key] = svg
   }
 
+  // What a person should confirm before sending: things the AI inferred about the partner.
+  const check = isAisensy ? [] : [
+    `Slide 2: the four customer wishes are inferred from ${name}’s site; confirm they match how its customers work.`,
+    `Slide 3: the mock shows a screen called “${brief.mock?.product}”; confirm it exists in ${name}’s product, or rename it.`,
+    `Slide 4: the quote ${brief.objections?.[0]?.quote} assumes ${name} already has integrations; confirm.`,
+    ...((brief.regions ?? []).length ? [`Slide 4: the region rows (${brief.regions.map((r) => r.label).join(', ')}) are the AI’s judgement of ${name}’s markets.`] : []),
+    ...((brief.extras ?? []).map((e) => `Slide 6: “${e.label}” is mentioned because the AI read a need for it on ${name}’s site; confirm.`)),
+    ...((brief.appsDropped ?? []).length ? [`Left out because viaSocket doesn’t list them: ${brief.appsDropped.join(', ')}.`] : []),
+    ...((brief.unverifiedAsks ?? []).length ? [`Slide 2 names apps viaSocket doesn’t list: ${brief.unverifiedAsks.join(', ')}.`] : []),
+    ...(briefSource.startsWith('generic') ? [`The AI draft failed, so slides 2 to 5 use generic examples, not ${name}’s use case.`] : [])
+  ]
   return {
     brief,
     // A transparent logo (a bare mark) sits on a white tile, like the AiSensy logo's own tile.
     assets: { partnerLogo: dataUri(logo.data), partnerTile: !(await sharp(Buffer.from(logo.data.split(',')[1], 'base64')).stats()).isOpaque, brands },
-    sources: { site: site?.url ?? null, domainFrom, pagesRead: pages.map((p) => p.url), appsMentioned: apps, logo: logo.source, color: isAisensy && !color ? 'AiSensy preset' : brand.source, brief: briefSource, aiTailored: briefSource.startsWith('viaSocket AI') || isAisensy, appsDropped: brief.appsDropped ?? [], regionsShown: (brief.regions ?? []).map((r) => r.label) }
+    sources: { site: site?.url ?? null, domainFrom, pagesRead: pages.map((p) => p.url), appsMentioned: apps, logo: logo.source, color: isAisensy && !color ? 'AiSensy preset' : brand.source, brief: briefSource, aiTailored: briefSource.startsWith('viaSocket AI') || isAisensy, check, appsDropped: brief.appsDropped ?? [], regionsShown: (brief.regions ?? []).map((r) => r.label) }
   }
 }

@@ -11,20 +11,32 @@ const rgb = (c) => { const n = parseInt(hex(c), 16); return [n >> 16, (n >> 8) &
 const mix = (c, to, t) => '#' + rgb(c).map((v) => Math.round(v + (to - v) * t).toString(16).padStart(2, '0')).join('').toUpperCase()
 
 // The final AiSensy deck as data. Every other partner's brief has exactly this shape.
+/** Wording that is the same for every partner. The AI draft is overwritten with it, so it cannot drift. */
+export function fixedWording(name) {
+  return {
+    subtitle: `Built-in integrations and agent tools for 2,300+ apps, inside ${name}.`,
+    title: 'Your customers want their apps connected. Today they go elsewhere.',
+    route: [name, 'A separate tool', 'customer’s apps'],
+    detour: `Today they set it up in a separate tool outside ${name}, where your product and agents can’t reach it.`,
+    answers: ['Keep them. viaSocket adds the rest.', 'Keep customers inside your product.'],
+    bodies: ['Wherever your customers are, we likely have it. If not, add it as a custom connector or request it.', 'No separate tool for them to set up, and it’s yours to brand and package into your plans.']
+  }
+}
+
 export const AISENSY_FINAL = {
   partner: { name: 'AiSensy', color: '#07CF65', deep: '#0A5C33', tint: '#E3F8EC', domain: 'aisensy.com' },
   heroLines: ['Give AiSensy and', 'its agents the', 'power to act'],
-  subtitle: 'Native integrations and agent tools for 2,300+ apps, inside AiSensy.',
+  subtitle: fixedWording('AiSensy').subtitle,
   problem: {
-    title: 'Your product and agents can talk. Can they act?',
+    title: fixedWording('AiSensy').title,
     asks: [
-      ['“Where’s my order?”', 'Needs Shopify / WooCommerce'],
-      ['“Book a demo for Friday”', 'Needs Google Calendar'],
-      ['“Sign me up for updates”', 'Needs Zoho / HubSpot / Salesforce'],
-      ['“I’ve paid, send my invoice”', 'Needs Razorpay / Cashfree']
+      ['“Sync my Shopify orders into AiSensy”', 'Sync data in · Shopify'],
+      ['“Message buyers when a payment lands”', 'Trigger an action · Razorpay'],
+      ['“Add every new lead to HubSpot”', 'Update an app · HubSpot'],
+      ['“Book the demo in my Google Calendar”', 'Agent action · Google Calendar']
     ],
-    route: ['AiSensy', 'Automation tool', 'customer’s apps'],
-    detour: 'A detour outside AiSensy, unusable by your product or agents.'
+    route: fixedWording('AiSensy').route,
+    detour: fixedWording('AiSensy').detour
   },
   engine: ['One Connect button, on Google’s own consent screen', 'Tokens, mapping and events handled', 'Same connection works as a tool for the agent'],
   mock: {
@@ -46,15 +58,15 @@ export const AISENSY_FINAL = {
     nodes: [['Razorpay payment', 'Razorpay'], ['viaSocket', 'viasocket'], ['AiSensy template', 'partner'], ['Customer confirmation', 'WhatsApp']]
   },
   objections: [
-    { quote: '“We already have a few integrations, like Shopify.”', answer: 'Keep them. viaSocket covers the rest.', body: 'Wherever your customers are, we likely have it. If not, add it as a custom connector or request it.', apps: ['Freshdesk', 'Zendesk', 'Zoho Desk', 'Google Calendar', 'Salesforce', 'Gmail'] },
-    { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan.', apps: [] }
+    { quote: '“We already have a few integrations, like Shopify.”', answer: fixedWording('AiSensy').answers[0], body: fixedWording('AiSensy').bodies[0], apps: ['Freshdesk', 'Zendesk', 'Zoho Desk', 'Google Calendar', 'Salesforce', 'Gmail'] },
+    { quote: '“Customers can just use an automation tool.”', answer: fixedWording('AiSensy').answers[1], body: fixedWording('AiSensy').bodies[1], apps: [] }
   ],
   banner: ['viaSocket adds to what you have.', 'It doesn’t replace it.'],
   extras: [],
   regions: [],
   notes: [
     'Open with the core idea: AiSensy’s AI Agent Builder can already understand customers. viaSocket lets it take action in the apps those customers already use.',
-    'Customers ask the agent for things that live in other apps. Today many AiSensy customers connect those apps through third-party automation tools: they leave AiSensy to set it up, pay for another tool, and neither the product nor the new AI agent can call those apps as tools.',
+    'AiSensy’s customers want their other apps connected: orders synced in, messages triggered by payments, leads added to the CRM, demos booked. Today many set that up in a separate tool outside AiSensy, where neither the product nor the AI agent can reach those apps.',
     'AiSensy’s own Campaign Agent, re-drawn as an illustrative mock. When the agent needs an app the customer hasn’t connected, it asks, and the Connect button runs viaSocket: Google’s consent screen opens, the customer approves, and viaSocket stores and refreshes the token and maps the data. Click to show the reverse direction: a Razorpay payment or a new order triggers an AiSensy template, which drives WhatsApp volume. Where the Connect moment sits is for AiSensy’s product team to shape.',
     'Objection 1: agree, and position viaSocket as the apps their customers ask for next. Lead with the apps shown, not with a catalogue number. Objection 2: that path sends customers out of AiSensy and adds a tool and a bill; with viaSocket, integrations stay inside AiSensy, under its brand, and become something AiSensy can package into higher plans. Keep the tone friendly and avoid naming other tools. If asked about an app that is missing: build it once as a custom connector in the Plug Builder, or request the integration from the viaSocket team.',
     'The setup is one prompt pasted into a coding agent. It asks for credentials, builds the connect flow, tools and triggers, and finishes with a real test call. Time a real run yourself before quoting a duration; rolling it out to customers is a short beta after that.'
@@ -66,17 +78,17 @@ export function genericBrief({ name, color, domain, description = '' }) {
   return {
     partner: { name, color, domain },
     heroLines: [`Give ${name}’s`, 'users the', 'power to act'],
-    subtitle: `Native integrations and agent tools for 2,300+ apps, inside ${name}.`,
+    subtitle: fixedWording(name).subtitle,
     problem: {
-      title: 'Your product and agents can talk. Can they act?',
+      title: fixedWording(name).title,
       asks: [
-        ['“Sync my new leads”', 'Needs HubSpot / Zoho CRM'],
-        ['“Log this in our sheet”', 'Needs Google Sheets'],
-        ['“Tell the team on Slack”', 'Needs Slack'],
-        ['“Did the payment go through?”', 'Needs Razorpay / Stripe']
+        ['“Sync my new leads into HubSpot”', 'Sync data in · HubSpot'],
+        ['“Log every signup in our sheet”', 'Update an app · Google Sheets'],
+        ['“Tell the team on Slack when a deal closes”', 'Trigger an action · Slack'],
+        ['“Send the invoice when a payment lands”', 'Trigger an action · Stripe']
       ],
-      route: [name, 'Automation tool', 'customer’s apps'],
-      detour: `A detour outside ${name}, unusable by your product or agents.`
+      route: fixedWording(name).route,
+      detour: fixedWording(name).detour
     },
     engine: ['One Connect button, on the app’s own consent screen', 'Tokens, mapping and events handled', 'Same connection works as a tool for your AI'],
     mock: {
@@ -90,15 +102,15 @@ export function genericBrief({ name, color, domain, description = '' }) {
       nodes: [['Stripe payment', 'Stripe'], ['viaSocket', 'viasocket'], [`${name} action`, 'partner'], ['Customer update', 'Gmail']]
     },
     objections: [
-      { quote: '“We already have a few integrations.”', answer: 'Keep them. viaSocket covers the rest.', body: 'Wherever your customers are, we likely have it. If not, add it as a custom connector or request it.', apps: ['HubSpot', 'Salesforce', 'Google Sheets', 'Slack', 'Gmail', 'Zendesk'] },
-      { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan.', apps: [] }
+      { quote: '“We already have a few integrations.”', answer: fixedWording(name).answers[0], body: fixedWording(name).bodies[0], apps: ['HubSpot', 'Salesforce', 'Google Sheets', 'Slack', 'Gmail', 'Zendesk'] },
+      { quote: '“Customers can just use an automation tool.”', answer: fixedWording(name).answers[1], body: fixedWording(name).bodies[1], apps: [] }
     ],
     banner: ['viaSocket adds to what you have.', 'It doesn’t replace it.'],
     extras: [],
     regions: [],
     notes: [
       `Open with the core idea for ${name}. ${description}`.trim(),
-      'Customers ask for things that live in other apps; today they leave the product to wire them up.',
+      'Customers want their other apps connected to the product; today they set that up in a separate tool outside it.',
       `An illustrative mock of ${name}. When an app isn’t connected yet, the product asks and viaSocket runs the connect flow. Click to show the reverse direction.`,
       'Agree with objection 1 and position viaSocket as the next apps. For objection 2, stress staying inside the product, under its brand. Avoid naming other tools.',
       'One prompt in a coding agent; a real test call at the end, then a short beta.'
@@ -149,7 +161,7 @@ ${foot(2)}
   <h2 class="t">Your UI. viaSocket’s engine.</h2>
   <div class="eng on-lp">
     <p class="eng-h">Powered by viaSocket</p>
-    <p class="eng-s">Invisible to your customers</p>
+    <p class="eng-s">Under your brand</p>
     <ul class="eng-l">
 ${b.engine.map((t) => `      <li class="eng-pt">${M.check}<span>${esc(t)}</span></li>`).join('\n')}
     </ul>
@@ -217,7 +229,8 @@ ${foot(5)}
   <div class="hero-s ty-ctx">
     <p class="ty-lead">viaSocket is the integration layer behind your product.</p>
     <p>Your customers connect their own apps inside your UI.</p>
-    <p>Your product and agents act in those apps, and app events start your flows.</p>${cleanExtras(b.extras).length ? `\n    <p class="ty-also">Also here: ${cleanExtras(b.extras).map((e) => esc(e.label)).join(' · ')}</p>` : ''}
+    <p>Your product and agents act in those apps, and app events start your flows.</p>
+    <p class="ty-ask">Let’s build one connection live with your team.</p>${cleanExtras(b.extras).length ? `\n    <p class="ty-also">Also here: ${cleanExtras(b.extras).map((e) => esc(e.label)).join(' · ')}</p>` : ''}
   </div>
   <div class="hero-f sig">
 ${who.name ? `    <small>Presented by</small>\n    <b>${esc(who.name)}</b>\n` : ''}${who.cal ? `    <a href="${esc(who.cal.url)}" target="_blank" rel="noopener"><span class="k">Book a call</span>${esc(who.cal.label)}</a>\n` : ''}    <a href="https://viasocket.com" target="_blank" rel="noopener"><span class="k">Learn more</span>viasocket.com</a>
@@ -273,6 +286,7 @@ const CLOSING_CSS = `<style>
 .v3 .hero-s.ty-ctx{top:300px;left:64px;width:600px;font-size:22px;line-height:1.45;color:var(--on-dark-2)}
 .v3 .ty-ctx p+p{margin-top:10px}
 .v3 .ty-ctx .ty-lead{font-size:30px;line-height:1.2;letter-spacing:-.02em;font-weight:600;color:#fff;margin-bottom:18px}
+.v3 .ty-ctx .ty-ask{font-size:24px;line-height:1.25;letter-spacing:-.015em;font-weight:600;color:#fff;margin-top:30px}
 .v3 .ty-ctx .ty-also{font-size:15px;color:var(--on-dark-3);margin-top:22px}
 .v3 .hero-f.ty-foot{left:64px;bottom:34px;font-size:13px;color:var(--on-dark-3)}
 .v3 .hero-f.sig{left:auto;right:56px;bottom:52px;width:400px;text-align:right;font-size:13px;color:var(--lit-fg)}
