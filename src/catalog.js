@@ -80,3 +80,39 @@ export async function listed(names) {
     return set.has(k) || (k.length >= 5 && keys.some((x) => x.startsWith(k) || (x.length >= 5 && k.startsWith(x))))
   }))
 }
+
+// Catalog names that are everyday words; matching them in a partner's text would say nothing about the partner.
+const COMMON = new Set(['calendar', 'email', 'forms', 'form', 'chat', 'tasks', 'task', 'contacts', 'notes', 'sheets', 'docs', 'drive', 'mail', 'phone', 'sms', 'webhook', 'webhooks', 'api', 'http', 'code', 'data', 'file', 'files', 'text', 'time', 'timer', 'schedule', 'filter', 'delay', 'database', 'storage', 'payments', 'analytics', 'survey', 'cloud', 'ai', 'web', 'app', 'apps', 'tools', 'calls', 'call', 'video', 'meet', 'plans', 'orders', 'support', 'sales', 'leads', 'site', 'blog', 'pages', 'pay', 'share', 'live'])
+
+/**
+ * Catalog apps whose names appear in `text`, most-used app first (the catalog's own order).
+ * Whole-word match on lower-cased words, names of up to three words, everyday words skipped.
+ */
+export async function namesIn(text) {
+  let idx
+  try { idx = await load() } catch { return null }
+  const words = String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? []
+  const grams = new Set()
+  for (let i = 0; i < words.length; i++) {
+    let g = words[i]
+    grams.add(g)
+    for (let n = 1; n < 3 && i + n < words.length; n++) { g += ' ' + words[i + n]; grams.add(g) }
+  }
+  const found = []
+  for (const a of idx.apps) {
+    const key = String(a.name ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+    if (key.length < 4 || COMMON.has(key) || key.split(' ').length > 3) continue
+    if (grams.has(key) && !found.includes(a.name.trim())) found.push(a.name.trim())
+  }
+  return found
+}
+
+/** The catalog row for an app name: exact name or slug, else the closest that starts with it. */
+export async function find(name) {
+  let idx
+  try { idx = await load() } catch { return null }
+  const k = norm(name)
+  if (!k) return null
+  return idx.apps.find((a) => norm(a.name) === k || norm(a.slug) === k)
+    ?? (k.length >= 5 ? idx.apps.find((a) => norm(a.name).startsWith(k)) : null) ?? null
+}
