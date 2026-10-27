@@ -167,7 +167,7 @@ Rules:
 - trigger.nodes is four [label, icon] pairs: icon is an app name from the list above, "viasocket" or "partner"; the second is always ["viaSocket","viasocket"].
 - objections[0].body is exactly: "Wherever your customers are, we likely have it. If not, add it as a custom connector or request it." objections[1].body is exactly: "No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan."
 - objections[0].apps lists up to six real apps the partner's own customers would plausibly ask for next (any well-known apps, not only the list above); they are checked against viaSocket's catalog and dropped if absent. Never pad it.
-- regions is [] unless the partner's own site clearly shows customers in several countries or regions. Then give 2 or 3 { "label": <country or region, under 14 characters>, "apps": <3 or 4 well-known apps customers there use, any category, checked against viaSocket's catalog> }. When regions has rows, objections[0].apps may be [].
+- regions is [] unless the partner's own site clearly shows customers in several countries or regions. Then give 2 or 3 { "label": <country or region, under 14 characters>, "apps": <3 or 4 apps that customers in that region favour over the other regions, any category, checked against viaSocket's catalog> }. Local favourites only (for example India: Razorpay, Zoho CRM, Cashfree; US: Stripe, HubSpot, Salesforce; Europe: Mollie, Pipedrive, Xero). Never list global apps such as Shopify, WooCommerce, Google Sheets, Google Calendar, Gmail, Slack or WhatsApp in a region, and never repeat an app across regions. If you cannot tell the regions apart this way, regions is []. When regions has rows, objections[0].apps may be [].
 - extras is [] unless the partner's own site shows a real need for one of these other viaSocket capabilities: ${EXTRA_CAPABILITIES.join(', ')}. Meanings: "Browser actions" = an agent can browse and act on websites that have no API; "50+ AI models" = AI agents on viaSocket can choose from 50+ AI models, so the partner needn't wire up each model; "Memory" = agents keep memory; "Scheduled execution" = actions run at set intervals without a user triggering them. Add at most two, as { "label": <one name from that list, exactly>, "text": <one short line, under 90 characters> }. Each line must rest on something the partner's site actually says it does; if you cannot point to that, leave extras empty. Never add one to fill the slide, and never describe how it works beyond its meaning above. Triggers (app events starting flows) are already the slide's "Listen" row: use them in the trigger strip, never as an extra.
 - notes is five speaker-note strings. Leave partner exactly as given.`
 
@@ -176,6 +176,17 @@ async function verifyApps(brief) {
   const names = [...new Set([...(brief.objections?.[0]?.apps ?? []), ...(brief.regions ?? []).flatMap((r) => r?.apps ?? [])].map(String))]
   const have = names.length ? await listed(names) : new Set()
   const dropped = []
+  // Region rows show local favourites only: no global apps, and no app under two regions.
+  const GLOBAL = new Set(['shopify', 'woocommerce', 'googlesheets', 'googlecalendar', 'gmail', 'slack', 'whatsapp', 'googledrive', 'zapier'])
+  const used = new Set()
+  brief.regions = (brief.regions ?? []).map((r) => ({
+    label: r?.label,
+    apps: (r?.apps ?? []).filter((a) => {
+      const k = String(a).toLowerCase().replace(/[^a-z0-9]/g, '')
+      if (GLOBAL.has(k) || used.has(k)) { dropped.push(a); return false }
+      used.add(k); return true
+    })
+  }))
   const keep = (list) => (list ?? []).filter((a) => (have ? (have.has(a) ? true : (dropped.push(a), false)) : true))
   if (brief.objections?.[0]) brief.objections[0].apps = keep(brief.objections[0].apps)
   brief.regions = have ? cleanRegions((brief.regions ?? []).map((r) => ({ label: r?.label, apps: keep(r?.apps) }))) : []
