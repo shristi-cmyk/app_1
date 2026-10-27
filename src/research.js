@@ -107,7 +107,7 @@ export async function crawl(site) {
 }
 
 // Apps a partner's site names: tells the AI what they already integrate with.
-const KNOWN_APPS = ['WhatsApp', 'Instagram', 'Facebook', 'Messenger', 'Telegram', 'Shopify', 'WooCommerce', 'Magento', 'BigCommerce', 'Razorpay', 'Stripe', 'PayU', 'PayPal', 'Cashfree', 'HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'LeadSquared', 'Freshdesk', 'Freshworks', 'Zendesk', 'Intercom', 'Google Sheets', 'Google Calendar', 'Google Drive', 'Gmail', 'Outlook', 'Microsoft Teams', 'Slack', 'Notion', 'Airtable', 'Calendly', 'Twilio', 'Mailchimp', 'Klaviyo', 'Jira', 'Asana', 'Trello', 'ClickUp', 'monday.com', 'Supabase', 'Postgres', 'Firebase', 'OpenAI', 'Zapier', 'Pabbly', 'n8n']
+const KNOWN_APPS = ['WhatsApp', 'Instagram', 'Facebook', 'Messenger', 'Telegram', 'Shopify', 'WooCommerce', 'Magento', 'BigCommerce', 'Razorpay', 'Stripe', 'PayU', 'PayPal', 'Cashfree', 'HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'LeadSquared', 'Freshdesk', 'Freshworks', 'Zendesk', 'Intercom', 'Google Sheets', 'Google Calendar', 'Google Drive', 'Gmail', 'Outlook', 'Microsoft Teams', 'Slack', 'Notion', 'Airtable', 'Calendly', 'Twilio', 'Mailchimp', 'Klaviyo', 'Jira', 'Asana', 'Trello', 'ClickUp', 'monday.com', 'Supabase', 'Postgres', 'Firebase', 'OpenAI', 'Zapier', 'Pabbly', 'n8n', 'GitHub', 'Discord', 'Zoom', 'Linear', 'Dropbox', 'Typeform', 'Google Drive', 'Google Ads', 'ActiveCampaign']
 export const mentions = (text) => KNOWN_APPS.filter((a) => new RegExp(`\\b${a.replace(/ /g, '\\s+')}\\b`, 'i').test(text))
 
 /** The brand colour: given, the site's theme-color, else the logo's dominant non-grey colour. */
@@ -269,7 +269,7 @@ export async function research({ name, domain, color, context, presenterName, ca
   // The partner itself can be in the catalog (even as "Powabase.ai"): never treat its own name as an app it integrates.
   const isSelf = (n) => { const a = slugOf(n), b = slugOf(name); return a === b || a.startsWith(b) || (a.length >= 4 && b.startsWith(a)) }
   const named = new Set(namedAll.filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n)))
-  // "Already in": only recognisable apps spelled the catalog's way in the partner's text, so everyday words don't pass.
+  // "Already in": only mainstream apps (a curated list), spelled the catalog's way near integration wording, so everyday words that are also app names never pass.
   // A name only counts as "already in" when it sits near integration wording ("integrates with", "connect", "sync"…),
   // so an everyday word that is also an app's name (a plan called "Scale") does not.
   const nearIntegration = (n) => {
@@ -279,7 +279,7 @@ export async function research({ name, domain, color, context, presenterName, ca
     }
     return false
   }
-  const exactNamed = ((await namesIn(allText, { exact: true, top: 600 })) ?? []).filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n) && !/[.]/.test(n) && nearIntegration(n))
+  const exactNamed = ((await namesIn(allText, { exact: true, top: 600 })) ?? []).filter((n) => !NOT_APPS.has(n.toLowerCase()) && !isSelf(n) && !/[.]/.test(n) && nearIntegration(n) && KNOWN_APPS.some((k) => slugOf(k) === slugOf(n)))
 
   // Logo: the bundled preset logo, then crawl the site, then viaSocket's catalog icon for the app.
   let logo = isAisensy ? { data: `image/png;base64,${readFileSync(new URL('./presets/aisensy.png', import.meta.url)).toString('base64')}`, source: 'AiSensy final deck' } : null
