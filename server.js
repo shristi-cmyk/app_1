@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import * as icons from './src/icons.js'
 import { research } from './src/research.js'
-import { lookup } from './src/catalog.js'
+import { lookup, listed } from './src/catalog.js'
 import { renderHtmlDeck } from './src/htmldeck.js'
 import { viasocket, ViaSocketError } from './src/viasocket.js'
 
@@ -56,8 +56,10 @@ async function partnerDeck(input, uid) {
 
 // Which website viaSocket's own app table lists for an app (read-only; used to check the lookup).
 app.get('/api/catalog/lookup', wrap(async (req, res) => {
-  const hit = await lookup(String(req.query.name ?? ''))
-  res.json(hit ? { name: hit.app.name, domain: hit.domain, matches: hit.matches } : { found: false })
+  const name = String(req.query.name ?? '')
+  const hit = await lookup(name)
+  const ok = await listed([name])
+  res.json({ ...(hit ? { name: hit.app.name, domain: hit.domain, matches: hit.matches } : { found: false }), listed: ok ? ok.has(name) : null })
 }))
 
 app.post('/api/partner-deck', wrap(async (req, res) => res.json(await partnerDeck(req.body, req.uid))))

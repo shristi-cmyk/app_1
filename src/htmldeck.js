@@ -13,7 +13,7 @@ const mix = (c, to, t) => '#' + rgb(c).map((v) => Math.round(v + (to - v) * t).t
 // The final AiSensy deck as data. Every other partner's brief has exactly this shape.
 export const AISENSY_FINAL = {
   partner: { name: 'AiSensy', color: '#07CF65', deep: '#0A5C33', tint: '#E3F8EC', domain: 'aisensy.com' },
-  heroLines: ['Give AiSensy’s', 'AI agents the', 'power to act'],
+  heroLines: ['Give AiSensy and', 'its agents the', 'power to act'],
   subtitle: 'Native integrations and agent tools for 2,300+ apps, inside AiSensy.',
   problem: {
     title: 'Your product and agents can talk. Can they act?',
@@ -21,7 +21,7 @@ export const AISENSY_FINAL = {
       ['“Where’s my order?”', 'Needs Shopify / WooCommerce'],
       ['“Book a demo for Friday”', 'Needs Google Calendar'],
       ['“Sign me up for updates”', 'Needs Zoho / HubSpot / Salesforce'],
-      ['“I’ve paid, send my invoice”', 'Needs Razorpay / PayU']
+      ['“I’ve paid, send my invoice”', 'Needs Razorpay / Cashfree']
     ],
     route: ['AiSensy', 'Automation tool', 'customer’s apps'],
     detour: 'A detour outside AiSensy, unusable by your product or agents.'
@@ -46,17 +46,18 @@ export const AISENSY_FINAL = {
     nodes: [['Razorpay payment', 'Razorpay'], ['viaSocket', 'viasocket'], ['AiSensy template', 'partner'], ['Customer confirmation', 'WhatsApp']]
   },
   objections: [
-    { quote: '“We already have a few integrations, like Shopify.”', answer: 'Keep them. viaSocket covers the rest.', body: 'Add the apps your customers ask for next, without building each one.', apps: ['Freshdesk', 'Zendesk', 'Zoho Desk', 'Google Calendar', 'Salesforce', 'Gmail'] },
-    { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans.', apps: [] }
+    { quote: '“We already have a few integrations, like Shopify.”', answer: 'Keep them. viaSocket covers the rest.', body: 'Wherever your customers are, we likely have it. If not, add it as a custom connector or request it.', apps: ['Freshdesk', 'Zendesk', 'Zoho Desk', 'Google Calendar', 'Salesforce', 'Gmail'] },
+    { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan.', apps: [] }
   ],
   banner: ['viaSocket adds to what you have.', 'It doesn’t replace it.'],
   extras: [],
+  regions: [],
   notes: [
     'Open with the core idea: AiSensy’s AI Agent Builder can already understand customers. viaSocket lets it take action in the apps those customers already use.',
     'Customers ask the agent for things that live in other apps. Today many AiSensy customers connect those apps through third-party automation tools: they leave AiSensy to set it up, pay for another tool, and neither the product nor the new AI agent can call those apps as tools.',
     'AiSensy’s own Campaign Agent, re-drawn as an illustrative mock. When the agent needs an app the customer hasn’t connected, it asks, and the Connect button runs viaSocket: Google’s consent screen opens, the customer approves, and viaSocket stores and refreshes the token and maps the data. Click to show the reverse direction: a Razorpay payment or a new order triggers an AiSensy template, which drives WhatsApp volume. Where the Connect moment sits is for AiSensy’s product team to shape.',
-    'Objection 1: agree, and position viaSocket as the apps their customers ask for next. Lead with the apps shown, not with a catalogue number. Objection 2: that path sends customers out of AiSensy and adds a tool and a bill; with viaSocket, integrations stay inside AiSensy, under its brand, and become something AiSensy can package into higher plans. Keep the tone friendly and avoid naming other tools.',
-    'The setup is one prompt pasted into a coding agent. It asks for credentials, builds the connect flow, tools and triggers, and finishes with a real test call. A working prototype is realistic in about 15 minutes; rolling it out to customers is a short beta after that.'
+    'Objection 1: agree, and position viaSocket as the apps their customers ask for next. Lead with the apps shown, not with a catalogue number. Objection 2: that path sends customers out of AiSensy and adds a tool and a bill; with viaSocket, integrations stay inside AiSensy, under its brand, and become something AiSensy can package into higher plans. Keep the tone friendly and avoid naming other tools. If asked about an app that is missing: build it once as a custom connector in the Plug Builder, or request the integration from the viaSocket team.',
+    'The setup is one prompt pasted into a coding agent. It asks for credentials, builds the connect flow, tools and triggers, and finishes with a real test call. Time a real run yourself before quoting a duration; rolling it out to customers is a short beta after that.'
   ]
 }
 
@@ -89,17 +90,18 @@ export function genericBrief({ name, color, domain, description = '' }) {
       nodes: [['Stripe payment', 'Stripe'], ['viaSocket', 'viasocket'], [`${name} action`, 'partner'], ['Customer update', 'Gmail']]
     },
     objections: [
-      { quote: '“We already have a few integrations.”', answer: 'Keep them. viaSocket covers the rest.', body: 'Add the apps your customers ask for next, without building each one.', apps: ['HubSpot', 'Salesforce', 'Google Sheets', 'Slack', 'Gmail', 'Zendesk'] },
-      { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans.', apps: [] }
+      { quote: '“We already have a few integrations.”', answer: 'Keep them. viaSocket covers the rest.', body: 'Wherever your customers are, we likely have it. If not, add it as a custom connector or request it.', apps: ['HubSpot', 'Salesforce', 'Google Sheets', 'Slack', 'Gmail', 'Zendesk'] },
+      { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan.', apps: [] }
     ],
     banner: ['viaSocket adds to what you have.', 'It doesn’t replace it.'],
     extras: [],
+    regions: [],
     notes: [
       `Open with the core idea for ${name}. ${description}`.trim(),
       'Customers ask for things that live in other apps; today they leave the product to wire them up.',
       `An illustrative mock of ${name}. When an app isn’t connected yet, the product asks and viaSocket runs the connect flow. Click to show the reverse direction.`,
       'Agree with objection 1 and position viaSocket as the next apps. For objection 2, stress staying inside the product, under its brand. Avoid naming other tools.',
-      'One prompt in a coding agent; a working prototype in about 15 minutes, then a short beta.'
+      'One prompt in a coding agent; a real test call at the end, then a short beta.'
     ]
   }
 }
@@ -118,6 +120,7 @@ function slides(b, a, M, who) {
   const conn = (i) => `<span class="tconn"><span class="conn-line"></span>${M.conn.replace('<svg', '<svg class="conn-arrow"')}<span class="packet" style="--p:${i}"></span></span>`
   const nodes = b.trigger.nodes.map(([label, key], i) => (i ? conn(i - 1) : '') + `<span class="tn">${icon(key)}<span>${esc(label)}</span></span>`).join('\n      ')
   const question = esc(b.mock.question).replace(/\[(.+?)\]/, '<mark>$1</mark>')
+  const regions = cleanRegions(b.regions)
   const [r1, r2, r3] = b.problem.route.map(esc)
 
   return `
@@ -191,18 +194,18 @@ ${foot(3)}
 <section class="slide light v3" id="slide-4" data-steps="3" aria-label="Slide 4 of 6">
   <div class="lp"></div>
   <h2 class="t">Don’t we already have this covered?</h2>
-  <p class="banner v3-ban bstep" data-step="3">${esc(b.banner[0])} <span>${esc(b.banner[1])}</span></p>
-${b.objections.map((o, i) => `  <div class="v3-obj bstep d3" data-step="${i + 1}" style="top:${i ? 372 : 118}px">
+  <p class="banner v3-ban bstep" data-step="3">${esc(b.banner[0])} <span><em>${esc(b.banner[1])}</em></span></p>
+${b.objections.map((o, i) => `  <div class="v3-obj bstep d3" data-step="${i + 1}" style="top:${i ? (regions.length ? 428 : 372) : (regions.length ? 110 : 118)}px">
     <p class="quote">${esc(o.quote)}</p>
     <h3 class="ans-h">${esc(o.answer)}</h3>
-    <p class="ans-p">${esc(o.body)}</p>${o.apps?.length ? `\n    <p class="apps-line">${o.apps.map(esc).join(' · ')}</p>` : ''}
+    <p class="ans-p">${esc(o.body)}</p>${i === 0 && regions.length ? `\n    <div class="regions">${regions.map((r) => `<div><b>${esc(r.label)}</b><span>${r.apps.map(esc).join(' · ')}</span></div>`).join('')}</div>` : o.apps?.length ? `\n    <p class="apps-line">${o.apps.map(esc).join(' · ')}</p>` : ''}
   </div>`).join('\n')}
 ${foot(4)}
 </section>
 
 <section class="slide light v3" id="slide-5" data-steps="0" aria-label="Slide 5 of 6">
   <div class="lp"></div>
-  <h2 class="t">Live in about 15 minutes</h2>
+  <h2 class="t">Live from one prompt</h2>
   <p class="beta">Then a short beta with real customers.</p>
   <ol class="vsteps"><span class="vrail"><span class="vrail-fill"></span></span><li class="vstep" style="--k:0"><span class="num">1</span><div><h3>Paste the prompt</h3><p>Into Cursor, Claude Code or Codex.</p></div></li><li class="vstep" style="--k:1"><span class="num">2</span><div><h3>Add credentials</h3><p>Org ID, project ID and secret, kept in <code>.env</code>.</p></div></li><li class="vstep" style="--k:2"><span class="num">3</span><div><h3>It builds</h3><p>Connect flow, agent tools and triggers.</p></div></li><li class="vstep" style="--k:3"><span class="num">4</span><div><h3>Real test call</h3><p>Against a connected app.</p></div></li></ol>
 ${foot(5)}
@@ -228,7 +231,7 @@ const js = (v) => JSON.stringify(v).replace(/</g, '\\u003c')
 
 // Other viaSocket capabilities a deck may mention, only when the partner's use case needs one.
 // (Triggers are already the slide's "Listen" row, so they are not repeated as an extra.)
-export const EXTRA_CAPABILITIES = ['Browser user', 'AI calls', 'Long-term memory', 'Schedules']
+export const EXTRA_CAPABILITIES = ['Browser actions', '50+ AI models', 'Memory', 'Scheduled execution']
 
 /** At most two { label, text } rows, labels from the fixed list above, so the AI cannot invent a feature. */
 export function cleanExtras(extras) {
@@ -242,6 +245,16 @@ export function cleanExtras(extras) {
   }).slice(0, 2)
 }
 
+/** At most three { label, apps } region rows: short labels, 2 to 5 apps each, and at least two regions or none. */
+export function cleanRegions(regions) {
+  const rows = (Array.isArray(regions) ? regions : []).flatMap((r) => {
+    const label = String(r?.label ?? '').trim()
+    const apps = [...new Set((Array.isArray(r?.apps) ? r.apps : []).map((a) => String(a).trim()).filter((a) => a && a.length <= 28))].slice(0, 5)
+    return label && label.length <= 14 && apps.length >= 2 ? [{ label, apps }] : []
+  }).slice(0, 3)
+  return rows.length >= 2 ? rows : []
+}
+
 /** The cal.id link: a full URL, `cal.id/name`, or just the username. */
 export function calLink(input) {
   const v = String(input ?? '').trim()
@@ -252,6 +265,11 @@ export function calLink(input) {
 }
 
 const CLOSING_CSS = `<style>
+.v3-ban em{font-style:normal;white-space:nowrap}
+.v3-obj .ans-p{max-width:62ch}
+.v3 .regions{margin-top:16px;display:grid;gap:7px}
+.v3 .regions div{display:grid;grid-template-columns:78px 1fr;gap:14px;align-items:baseline;font-size:16px;color:var(--text-2)}
+.v3 .regions b{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sec-deep)}
 .v3 .hero-s.ty-ctx{top:300px;left:64px;width:600px;font-size:22px;line-height:1.45;color:var(--on-dark-2)}
 .v3 .ty-ctx p+p{margin-top:10px}
 .v3 .ty-ctx .ty-lead{font-size:30px;line-height:1.2;letter-spacing:-.02em;font-weight:600;color:#fff;margin-bottom:18px}

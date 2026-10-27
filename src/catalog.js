@@ -64,3 +64,19 @@ export async function lookup(name) {
     matches: domains.length > 1 ? withDomain.map((r) => ({ name: r.name, domain: cleanDomain(r.domain) })) : []
   }
 }
+
+/**
+ * Which of these app names viaSocket lists. A name matches when it equals a catalog name or slug, or when one
+ * starts with the other (so "Zendesk" finds "Zendesk Support"). null when the table could not be read.
+ */
+export async function listed(names) {
+  let idx
+  try { idx = await load() } catch { return null }
+  const keys = idx.apps.flatMap((a) => [norm(a.name), norm(a.slug)]).filter(Boolean)
+  const set = new Set(keys)
+  return new Set(names.filter((n) => {
+    const k = norm(n)
+    if (k.length < 3) return false
+    return set.has(k) || (k.length >= 5 && keys.some((x) => x.startsWith(k) || (x.length >= 5 && k.startsWith(x))))
+  }))
+}

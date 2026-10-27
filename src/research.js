@@ -2,8 +2,8 @@ import sharp from 'sharp'
 import { readFileSync } from 'node:fs'
 import * as icons from './icons.js'
 import { viasocket } from './viasocket.js'
-import { AISENSY_FINAL, genericBrief, calLink, cleanExtras, EXTRA_CAPABILITIES } from './htmldeck.js'
-import { lookup } from './catalog.js'
+import { AISENSY_FINAL, genericBrief, calLink, cleanExtras, cleanRegions, EXTRA_CAPABILITIES } from './htmldeck.js'
+import { lookup, listed } from './catalog.js'
 
 const UA = { 'user-agent': 'Mozilla/5.0 (compatible; PartnershipDeckManager/1.0)' }
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -153,17 +153,34 @@ async function brandSvg(name) {
   return svg
 }
 
-const BRIEF_PROMPT = `You write the content of slides 1-5 of a pitch deck for viaSocket's embed partnership (slide 6, about viaSocket, is fixed) ("Your UI. viaSocket's engine."): the partner embeds viaSocket so their own customers connect 2,300+ apps inside the partner's product, and the partner's AI/agents can use those apps as tools.
-Return ONLY a JSON object with exactly the keys and nesting of the example, rewritten for the partner from what their site says they do. Rules:
+const BRIEF_PROMPT = `You write the content of slides 1-5 of a pitch deck for viaSocket's embed partnership ("Your UI. viaSocket's engine."): the partner embeds viaSocket so their own customers connect 2,300+ apps inside the partner's product, and the partner's product and AI agents can use those apps as tools. (Slide 6, about viaSocket, is fixed.)
+Return ONLY a JSON object with exactly the keys and nesting of the example, rewritten for the partner from what their site says they do.
+
+About viaSocket (from viasocket.com). viaSocket is an integration layer for products and AI agents: "You build the app or agent. viaSocket handles the connections and actions." You may rely on these facts and no others: 2,300+ app integrations; managed authentication (the app's own consent screen, tokens encrypted and refreshed); managed data mapping; triggers and webhooks (events from connected apps, polling and retries handled); multi-tenant (separate connected accounts per customer); custom branding (the partner's logo, colours and domain); AI agents with 50+ AI models, memory, connected apps as tools and multi-step workflows; in-app AI chatbots; browser actions (an agent can browse and act on sites with no API); real-time, background and scheduled execution with retries; execution monitoring, debugging and replay; regional deployment; MCP support; custom integrations and API requests; a missing app can be built once as a custom connector in the Plug Builder, or requested from the viaSocket team; every plan includes unlimited connected accounts, users, workflows and projects. Never state prices, plan limits, timings (such as "15 minutes"), customer counts, or that viaSocket itself builds an integration on request.
+
+Rules:
 - Find the partner's real use case: what their customers ask their product for that lives in another app.
-- Name only these apps: Shopify, WooCommerce, HubSpot, Zoho CRM, Zoho Desk, Freshdesk, Zendesk, Salesforce, Razorpay, Stripe, Google Sheets, Google Calendar, Gmail, Slack, WhatsApp.
+- Customer questions (problem.asks), the demo and the trigger strip name only these apps: Shopify, WooCommerce, HubSpot, Zoho CRM, Zoho Desk, Freshdesk, Zendesk, Salesforce, Razorpay, Stripe, Cashfree, Google Sheets, Google Calendar, Gmail, Slack, WhatsApp.
 - problem.title speaks to the partner's product and, when it has them, its agents: "Your product and agents can answer. Can they act?" (without agents: "Your product can answer. Can it act?"). problem.detour is one short line: "A detour outside <partner>, unusable by your product or agents." (say "your product" only if it has no agents).
 - problem.route is [partner name, "Automation tool", "customer’s apps"]: never name competitors. Every fact appears once. Keep lines as short as the example.
-- heroLines is the headline in three short lines. mock.product is a real screen or feature of the partner's product; mock.question marks one word in [brackets]; mock.typed is what a customer types there.
-- trigger.nodes is four [label, icon] pairs: icon is an app name above, "viasocket" or "partner"; the second is always ["viaSocket","viasocket"].
-- objections[0].apps lists apps the partner's own customers would plausibly ask for next, from the list above; never pad it with unrelated apps.
-- extras is [] unless the partner's own site shows a real need for one of these other viaSocket capabilities: ${EXTRA_CAPABILITIES.join(', ')}. Meanings: "Browser user" = an agent can use a web browser like a person, for sites with no API; "AI calls" = AI model calls (OpenAI and more) can go through viaSocket pass, optional, so the partner needn't manage model keys; "Long-term memory" = agents remember across conversations; "Schedules" = actions run on a timetable. Add at most two, as { "label": <one name from that list, exactly>, "text": <one short line, under 90 characters> }. Each line must rest on something the partner's site actually says it does; if you cannot point to that, leave extras empty. Never add one to fill the slide, never describe how it works beyond its meaning above, and never invent other capabilities or any numbers, prices or limits. Triggers (app events starting flows) are already the slide's "Listen" row: use them in the trigger strip, never as an extra.
+- heroLines is the headline in three short lines: "Give <partner> and its agents the power to act" when the partner has agents, else "Give <partner>’s users the power to act". mock.product is a real screen or feature of the partner's product; mock.question marks one word in [brackets]; mock.typed is what a customer types there.
+- trigger.nodes is four [label, icon] pairs: icon is an app name from the list above, "viasocket" or "partner"; the second is always ["viaSocket","viasocket"].
+- objections[0].body is exactly: "Wherever your customers are, we likely have it. If not, add it as a custom connector or request it." objections[1].body is exactly: "No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan."
+- objections[0].apps lists up to six real apps the partner's own customers would plausibly ask for next (any well-known apps, not only the list above); they are checked against viaSocket's catalog and dropped if absent. Never pad it.
+- regions is [] unless the partner's own site clearly shows customers in several countries or regions. Then give 2 or 3 { "label": <country or region, under 14 characters>, "apps": <3 or 4 well-known apps customers there use, any category, checked against viaSocket's catalog> }. When regions has rows, objections[0].apps may be [].
+- extras is [] unless the partner's own site shows a real need for one of these other viaSocket capabilities: ${EXTRA_CAPABILITIES.join(', ')}. Meanings: "Browser actions" = an agent can browse and act on websites that have no API; "50+ AI models" = AI agents on viaSocket can choose from 50+ AI models, so the partner needn't wire up each model; "Memory" = agents keep memory; "Scheduled execution" = actions run at set intervals without a user triggering them. Add at most two, as { "label": <one name from that list, exactly>, "text": <one short line, under 90 characters> }. Each line must rest on something the partner's site actually says it does; if you cannot point to that, leave extras empty. Never add one to fill the slide, and never describe how it works beyond its meaning above. Triggers (app events starting flows) are already the slide's "Listen" row: use them in the trigger strip, never as an extra.
 - notes is five speaker-note strings. Leave partner exactly as given.`
+
+/** Keep only apps viaSocket's own table lists; region rows need that check, so without the table they are dropped. */
+async function verifyApps(brief) {
+  const names = [...new Set([...(brief.objections?.[0]?.apps ?? []), ...(brief.regions ?? []).flatMap((r) => r?.apps ?? [])].map(String))]
+  const have = names.length ? await listed(names) : new Set()
+  const dropped = []
+  const keep = (list) => (list ?? []).filter((a) => (have ? (have.has(a) ? true : (dropped.push(a), false)) : true))
+  if (brief.objections?.[0]) brief.objections[0].apps = keep(brief.objections[0].apps)
+  brief.regions = have ? cleanRegions((brief.regions ?? []).map((r) => ({ label: r?.label, apps: keep(r?.apps) }))) : []
+  return dropped
+}
 
 /** The product's AI drafts the brief from the partner's site, per run. */
 async function draftBrief(uid, partner, pages, apps, context) {
@@ -183,7 +200,11 @@ async function draftBrief(uid, partner, pages, apps, context) {
   const b = reply.content
   const ok = b && typeof b === 'object' && b.heroLines?.length && b.problem?.asks?.length && b.problem?.route?.length === 3 && b.mock?.typed && b.trigger?.nodes?.length && b.objections?.length === 2 && b.notes?.length === 5
   if (!ok) throw new Error('AI draft incomplete')
-  return { ...b, partner, extras: cleanExtras(b.extras) }
+  // The two objection answers are fixed wording, not the AI's.
+  b.objections[0].body = 'Wherever your customers are, we likely have it. If not, add it as a custom connector or request it.'
+  b.objections[1].body = 'No extra tool or bill for them, and it’s yours to brand and package into your plans. Connected accounts are unlimited on every plan.'
+  const dropped = await verifyApps(b)
+  return { ...b, partner, extras: cleanExtras(b.extras), appsDropped: dropped }
 }
 
 /**
@@ -262,6 +283,6 @@ export async function research({ name, domain, color, context, presenterName, ca
     brief,
     // A transparent logo (a bare mark) sits on a white tile, like the AiSensy logo's own tile.
     assets: { partnerLogo: dataUri(logo.data), partnerTile: !(await sharp(Buffer.from(logo.data.split(',')[1], 'base64')).stats()).isOpaque, brands },
-    sources: { site: site?.url ?? null, domainFrom, pagesRead: pages.map((p) => p.url), appsMentioned: apps, logo: logo.source, color: isAisensy && !color ? 'AiSensy preset' : brand.source, brief: briefSource, aiTailored: briefSource.startsWith('viaSocket AI') || isAisensy }
+    sources: { site: site?.url ?? null, domainFrom, pagesRead: pages.map((p) => p.url), appsMentioned: apps, logo: logo.source, color: isAisensy && !color ? 'AiSensy preset' : brand.source, brief: briefSource, aiTailored: briefSource.startsWith('viaSocket AI') || isAisensy, appsDropped: brief.appsDropped ?? [], regionsShown: (brief.regions ?? []).map((r) => r.label) }
   }
 }
