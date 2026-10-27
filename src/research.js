@@ -20,10 +20,19 @@ async function page(url) {
  * The partner's site. Given: use it. Otherwise try name.com/.ai/.io/.in/.co; when several answer,
  * pick the one that matches viaSocket's catalog description of the app, and ask when none clearly does.
  */
-async function findSite(name, domain) {
+async function open(domain) {
+  const bare = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '')
+  for (const u of [`https://${bare}`, `https://www.${bare}`, `http://${bare}`]) {
+    try { const hit = await page(u); return { domain: new URL(hit.url).host, ...hit } } catch { /* next variant */ }
+  }
+  return null
+}
+
+async function findSite(name, domain, { strict = true } = {}) {
   const clean = (d) => d.replace(/^https?:\/\//, '').replace(/\/+$/, '')
   if (domain) {
-    try { const hit = await page(`https://${clean(domain)}`); return { domain: new URL(hit.url).host, ...hit } } catch { return null }
+    const hit = await open(clean(domain))
+    if (hit || strict) return hit
   }
   const tries = ['com', 'ai', 'io', 'in', 'co'].map((tld) => `${slug(name)}.${tld}`)
   const hits = (await Promise.all(tries.map(async (d) => { try { const hit = await page(`https://${d}`); return { domain: new URL(hit.url).host, ...hit } } catch { return null } }))).filter(Boolean)
@@ -193,7 +202,10 @@ export async function research({ name, domain, color, context, presenterName, ca
     }
     if (hit?.domain) { domain = hit.domain; domainFrom = 'viaSocket catalog' }
   }
-  const found = await findSite(name, domain ?? (isAisensy ? 'aisensy.com' : undefined))
+  // A website from viaSocket's table that won't open falls back to guessing from the name; a website the user typed does not.
+  let found = await findSite(name, domain ?? (isAisensy ? 'aisensy.com' : undefined), { strict: domainFrom !== 'viaSocket catalog' })
+  const catalogDomain = domainFrom === 'viaSocket catalog' ? domain : null
+  if (found && !found.ambiguous && catalogDomain && found.domain.replace(/^www\./, '') !== catalogDomain) domainFrom = `viaSocket lists ${catalogDomain}; the site that opened is ${found.domain}`
   if (found && !domainFrom) domainFrom = 'guessed from the name'
   if (found?.ambiguous) {
     return { missing: [{ field: 'domain', name, hint: `More than one company uses the name ${name}: ${found.ambiguous.join(', ')}. Which website is the right one?`, options: found.ambiguous }], found: {} }
