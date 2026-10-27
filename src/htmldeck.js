@@ -228,7 +228,8 @@ ${foot(6)}
 const js = (v) => JSON.stringify(v).replace(/</g, '\\u003c')
 
 // Other viaSocket capabilities a deck may mention, only when the partner's use case needs one.
-export const EXTRA_CAPABILITIES = ['Browser user', 'AI calls', 'Long-term memory', 'Schedules', 'Triggers']
+// (Triggers are already the slide's "Listen" row, so they are not repeated as an extra.)
+export const EXTRA_CAPABILITIES = ['Browser user', 'AI calls', 'Long-term memory', 'Schedules']
 
 /** At most two { label, text } rows, labels from the fixed list above, so the AI cannot invent a feature. */
 export function cleanExtras(extras) {
