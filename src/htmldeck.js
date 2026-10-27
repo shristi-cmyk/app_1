@@ -208,19 +208,18 @@ ${foot(4)}
 ${foot(5)}
 </section>
 
-<section class="slide light v3" id="slide-6" data-steps="0" aria-label="Slide 6 of 6">
-  <div class="lp"></div>
-  <h2 class="t">viaSocket, the integration layer</h2>
-  <div class="who bstep" data-step="0">
-${who.name ? `    <small>Presented by</small>\n    <b>${esc(who.name)}</b>\n` : ''}${who.cal ? `    <a href="${esc(who.cal.url)}" target="_blank" rel="noopener"><span class="k">Book a call</span> ${esc(who.cal.label)}</a>\n` : ''}    <a href="https://viasocket.com" target="_blank" rel="noopener"><span class="k">Learn more</span> viasocket.com</a>
+<section class="slide light v3" id="slide-6" data-steps="0" aria-label="Slide 6 of 6: thank you">
+  <div class="lp wide"></div><div class="gp"></div>
+  <h1 class="hero-t"><span class="ln"><span>Thank you.</span></span></h1>
+  <div class="hero-s ty-ctx">
+    <p class="ty-lead">viaSocket is the integration layer behind your product.</p>
+    <p>Your customers connect their own apps inside your UI.</p>
+    <p>Your product and agents act in those apps, and app events start your flows.</p>${cleanExtras(b.extras).length ? `\n    <p class="ty-also">Also here: ${cleanExtras(b.extras).map((e) => esc(e.label)).join(' · ')}</p>` : ''}
   </div>
-  <p class="intro-lead bstep" data-step="0">One layer between your product and the apps your customers already use.</p>
-  <ul class="intro-rows bstep${cleanExtras(b.extras).length ? ' tight' : ''}" data-step="0">
-    <li class="rowin" style="--k:0"><span class="iv">Connect</span><span class="it">Your users link their own accounts, inside your UI.</span></li>
-    <li class="rowin" style="--k:1"><span class="iv">Act</span><span class="it">Your product and your agents run actions in those apps.</span></li>
-    <li class="rowin" style="--k:2"><span class="iv">Listen</span><span class="it">Events in those apps start flows in ${esc(b.partner.name)}.</span></li>${cleanExtras(b.extras).map((e, i) => `\n    <li class="rowin" style="--k:${3 + i}"><span class="iv">${esc(e.label)}</span><span class="it">${esc(e.text)}</span></li>`).join('')}
-  </ul>
-${foot(6)}
+  <div class="hero-f sig">
+${who.name ? `    <small>Presented by</small>\n    <b>${esc(who.name)}</b>\n` : ''}${who.cal ? `    <a href="${esc(who.cal.url)}" target="_blank" rel="noopener"><span class="k">Book a call</span>${esc(who.cal.label)}</a>\n` : ''}    <a href="https://viasocket.com" target="_blank" rel="noopener"><span class="k">Learn more</span>viasocket.com</a>
+  </div>
+  <p class="hero-f ty-foot">viaSocket × ${p}</p>
 </section>
 `
 }
@@ -253,21 +252,17 @@ export function calLink(input) {
 }
 
 const CLOSING_CSS = `<style>
-.v3 .intro-lead{position:absolute;left:496px;top:96px;width:700px;font-size:38px;line-height:1.16;letter-spacing:-.03em;font-weight:600;color:var(--text)}
-.v3 .intro-rows{position:absolute;left:496px;top:262px;width:728px}
-.v3 .intro-rows li{display:grid;grid-template-columns:176px 1fr;align-items:baseline;gap:20px;padding:20px 0;border-top:1px solid var(--line)}
-.v3 .intro-rows.tight{top:232px}
-.v3 .intro-rows.tight li{padding:12px 0}
-.v3 .intro-rows.tight .it{font-size:21px}
-.v3 .intro-rows li:last-child{border-bottom:1px solid var(--line)}
-.v3 .intro-rows .iv{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sec-deep)}
-.v3 .intro-rows .it{font-size:23px;line-height:1.35;color:var(--text-2)}
-.v3 .who{position:absolute;left:56px;top:372px;width:340px;color:#fff}
-.v3 .who small{display:block;font-size:14px;color:var(--on-dark-3);margin-bottom:6px}
-.v3 .who b{display:block;font-size:30px;line-height:1.1;font-weight:600;letter-spacing:-.02em;margin-bottom:26px}
-.v3 .who a{display:block;margin-top:10px;font-size:19px;color:#fff;text-decoration:none;overflow-wrap:anywhere}
-.v3 .who a .k{display:block;font-size:13px;color:var(--sec);margin-bottom:2px}
-@media print{.v3 .who a{text-decoration:none}}
+.v3 .hero-s.ty-ctx{top:300px;left:64px;width:600px;font-size:22px;line-height:1.45;color:var(--on-dark-2)}
+.v3 .ty-ctx p+p{margin-top:10px}
+.v3 .ty-ctx .ty-lead{font-size:30px;line-height:1.2;letter-spacing:-.02em;font-weight:600;color:#fff;margin-bottom:18px}
+.v3 .ty-ctx .ty-also{font-size:15px;color:var(--on-dark-3);margin-top:22px}
+.v3 .hero-f.ty-foot{left:64px;bottom:34px;font-size:13px;color:var(--on-dark-3)}
+.v3 .hero-f.sig{left:auto;right:56px;bottom:52px;width:400px;text-align:right;font-size:13px;color:var(--lit-fg)}
+.v3 .sig small{display:block;font-size:14px;opacity:.7;margin-bottom:6px}
+.v3 .sig b{display:block;font-size:34px;line-height:1.1;font-weight:600;letter-spacing:-.025em;padding-bottom:20px;margin-bottom:20px;border-bottom:2px solid currentColor}
+.v3 .sig a{display:block;margin-top:12px;font-size:21px;font-weight:500;color:inherit;text-decoration:none;overflow-wrap:anywhere}
+.v3 .sig a .k{display:block;font-size:13px;font-weight:400;opacity:.7;margin-bottom:2px}
+@media print{.v3 .sig a{text-decoration:none}}
 </style>
 `
 
@@ -280,7 +275,7 @@ export async function renderHtmlDeck(brief, assets = {}, presenter = {}) {
     .replace('__TITLE__', () => `viaSocket × ${esc(brief.partner.name)} · Partnership proposal`)
     .replace('__SEC__', sec.color).replace('__SEC_DEEP__', sec.deep).replace('__SEC_TINT__', sec.tint)
     .replaceAll('__SEC_RGB__', rgb(c).join(','))
-    .replace('__NOTES__', () => js([...brief.notes, `Close by introducing viaSocket as the layer that connects the partner’s product and agents to their customers’ apps.${who.name ? ` ${who.name} presents and takes questions` : ''}${who.cal ? `; the call link is ${who.cal.label}` : ''}${who.name || who.cal ? '.' : ''}`]))
+    .replace('__NOTES__', () => js([...brief.notes, `Thank them, and introduce viaSocket as the layer that connects the partner’s product and agents to their customers’ apps.${who.name ? ` ${who.name} presents and takes questions` : ''}${who.cal ? `; the call link is ${who.cal.label}` : ''}${who.name || who.cal ? '.' : ''}${cleanExtras(brief.extras).map((e) => ` Also relevant: ${e.label}, ${e.text.charAt(0).toLowerCase()}${e.text.slice(1)}`).join('')}`]))
     .replace('__TYPED__', () => js(brief.mock.typed))
   // The final deck puts ink on the partner colour; a dark partner colour needs white instead.
   const lum = rgb(c).map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((t, v, i) => t + v * [0.2126, 0.7152, 0.0722][i], 0)
