@@ -2,7 +2,8 @@ import sharp from 'sharp'
 import { readFileSync } from 'node:fs'
 import * as icons from './icons.js'
 import { viasocket } from './viasocket.js'
-import { AISENSY_FINAL, genericBrief } from './htmldeck.js'
+import { AISENSY_FINAL, genericBrief, calLink } from './htmldeck.js'
+import { lookup } from './catalog.js'
 
 const UA = { 'user-agent': 'Mozilla/5.0 (compatible; PartnershipDeckManager/1.0)' }
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -143,10 +144,11 @@ async function brandSvg(name) {
   return svg
 }
 
-const BRIEF_PROMPT = `You write a 5-slide pitch deck for viaSocket's embed partnership ("Your UI. viaSocket's engine."): the partner embeds viaSocket so their own customers connect 2,300+ apps inside the partner's product, and the partner's AI/agents can use those apps as tools.
+const BRIEF_PROMPT = `You write the content of slides 1-5 of a pitch deck for viaSocket's embed partnership (slide 6, about viaSocket, is fixed) ("Your UI. viaSocket's engine."): the partner embeds viaSocket so their own customers connect 2,300+ apps inside the partner's product, and the partner's AI/agents can use those apps as tools.
 Return ONLY a JSON object with exactly the keys and nesting of the example, rewritten for the partner from what their site says they do. Rules:
 - Find the partner's real use case: what their customers ask their product for that lives in another app.
 - Name only these apps: Shopify, WooCommerce, HubSpot, Zoho CRM, Zoho Desk, Freshdesk, Zendesk, Salesforce, Razorpay, Stripe, Google Sheets, Google Calendar, Gmail, Slack, WhatsApp.
+- problem.title speaks to the partner's product and, when it has them, its agents: "Your product and agents can answer. Can they act?" (without agents: "Your product can answer. Can it act?"). problem.detour is one short line: "A detour outside <partner>, unusable by your product or agents." (say "your product" only if it has no agents).
 - problem.route is [partner name, "Automation tool", "customer’s apps"]: never name competitors. Every fact appears once. Keep lines as short as the example.
 - heroLines is the headline in three short lines. mock.product is a real screen or feature of the partner's product; mock.question marks one word in [brackets]; mock.typed is what a customer types there.
 - trigger.nodes is four [label, icon] pairs: icon is an app name above, "viasocket" or "partner"; the second is always ["viaSocket","viasocket"].
@@ -178,9 +180,21 @@ async function draftBrief(uid, partner, pages, apps, context) {
  * Everything a deck needs for one partner. Returns { missing: [...] } listing what to ask the user
  * for (logo, brand colour) instead of guessing; otherwise { brief, assets, sources }.
  */
-export async function research({ name, domain, color, context, uid = 'anonymous' }) {
+export async function research({ name, domain, color, context, presenterName, cal, requirePresenter = true, uid = 'anonymous' }) {
   const isAisensy = slug(name) === 'aisensy'
+  // Website: the one given, else the one in viaSocket's own app table, else a guess from the name.
+  let domainFrom = domain ? 'given' : null
+  let catalogApp = null
+  if (!domain && !isAisensy) {
+    const hit = await lookup(name)
+    catalogApp = hit?.app ?? null
+    if (hit?.matches.length) {
+      return { missing: [{ field: 'domain', name, hint: `viaSocket lists more than one app called ${name}: ${hit.matches.map((m) => m.domain).join(', ')}. Which website is the right one?`, options: hit.matches.map((m) => m.domain) }], found: {} }
+    }
+    if (hit?.domain) { domain = hit.domain; domainFrom = 'viaSocket catalog' }
+  }
   const found = await findSite(name, domain ?? (isAisensy ? 'aisensy.com' : undefined))
+  if (found && !domainFrom) domainFrom = 'guessed from the name'
   if (found?.ambiguous) {
     return { missing: [{ field: 'domain', name, hint: `More than one company uses the name ${name}: ${found.ambiguous.join(', ')}. Which website is the right one?`, options: found.ambiguous }], found: {} }
   }
@@ -197,8 +211,8 @@ export async function research({ name, domain, color, context, uid = 'anonymous'
   logo ??= await icons.resolve(name, { domain: host, kind: 'logo' })
   if (!logo) {
     try {
-      const hit = (await viasocket().catalog.search(name)).find((a) => slug(a.name) === slug(name))
-      if (hit?.iconUrl) { await icons.supplyFromUrl(name, hit.iconUrl); logo = await icons.resolve(name) }
+      const iconUrl = catalogApp?.iconUrl || (await viasocket().catalog.search(name)).find((a) => slug(a.name) === slug(name))?.iconUrl
+      if (iconUrl) { await icons.supplyFromUrl(name, iconUrl); logo = await icons.resolve(name) }
     } catch { /* catalog unreachable */ }
   }
   const brand = await brandColor(color ?? (isAisensy ? AISENSY_FINAL.partner.color : undefined), info.themeColor, logo?.data && dataUri(logo.data))
@@ -206,6 +220,8 @@ export async function research({ name, domain, color, context, uid = 'anonymous'
   const missing = []
   if (!logo) missing.push({ field: 'logo', name, hint: `a logo URL for ${name}` })
   if (!brand) missing.push({ field: 'color', name, hint: `${name}'s brand colour as hex` })
+  if (requirePresenter && !String(presenterName ?? '').trim()) missing.push({ field: 'presenter', name, hint: 'Who is presenting this deck? (their name, shown on the last slide)' })
+  if (requirePresenter && !calLink(cal)) missing.push({ field: 'cal', name, hint: 'The presenter’s cal.id link or username (e.g. cal.id/yourname or just yourname)' })
   if (!isAisensy && !context && allText.length < 600) {
     missing.push({ field: 'context', name, hint: site ? `${name}'s website has almost no readable text (it is probably built with JavaScript). In a sentence or two: what does ${name} do, and who uses it?` : `I couldn't open ${name}'s website. In a sentence or two: what does ${name} do, and who uses it? (Or give its website.)` })
   }
@@ -233,6 +249,6 @@ export async function research({ name, domain, color, context, uid = 'anonymous'
     brief,
     // A transparent logo (a bare mark) sits on a white tile, like the AiSensy logo's own tile.
     assets: { partnerLogo: dataUri(logo.data), partnerTile: !(await sharp(Buffer.from(logo.data.split(',')[1], 'base64')).stats()).isOpaque, brands },
-    sources: { site: site?.url ?? null, pagesRead: pages.map((p) => p.url), appsMentioned: apps, logo: logo.source, color: isAisensy && !color ? 'AiSensy preset' : brand.source, brief: briefSource, aiTailored: briefSource.startsWith('viaSocket AI') || isAisensy }
+    sources: { site: site?.url ?? null, domainFrom, pagesRead: pages.map((p) => p.url), appsMentioned: apps, logo: logo.source, color: isAisensy && !color ? 'AiSensy preset' : brand.source, brief: briefSource, aiTailored: briefSource.startsWith('viaSocket AI') || isAisensy }
   }
 }

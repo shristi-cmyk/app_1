@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import * as icons from './src/icons.js'
 import { research } from './src/research.js'
+import { lookup } from './src/catalog.js'
 import { renderHtmlDeck } from './src/htmldeck.js'
 import { viasocket, ViaSocketError } from './src/viasocket.js'
 
@@ -29,7 +30,7 @@ const wrap = (fn) => (req, res) => fn(req, res).catch((e) => {
   res.status(status).json({ error: e.message, ...(e.body && { detail: e.body }) })
 })
 
-// ---------- animated 5-slide HTML decks: application name in, shareable link out ----------
+// ---------- animated 6-slide HTML decks: application name in, shareable link out ----------
 // Deck pages are kept in memory and, on Embarko, as files under DATA_DIR so shared links survive restarts.
 const htmlDecks = new Map()
 const DECK_DIR = process.env.DATA_DIR ? join(process.env.DATA_DIR, 'decks') : null
@@ -39,6 +40,7 @@ const loadDeck = (id) => {
   if (!DECK_DIR || !/^[a-z0-9-]+$/.test(id)) return null
   try { return readFileSync(join(DECK_DIR, `${id}.html`), 'utf8') } catch { return null }
 }
+let aisensy = null
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 async function partnerDeck(input, uid) {
@@ -46,11 +48,17 @@ async function partnerDeck(input, uid) {
   const r = await research({ ...input, uid })
   if (r.missing) return { status: 'needs_input', missing: r.missing, found: r.found }
   const id = `${slugify(input.name)}-${randomUUID().slice(0, 6)}`
-  const html = await renderHtmlDeck(r.brief, r.assets)
+  const html = await renderHtmlDeck(r.brief, r.assets, { name: input.presenterName, cal: input.cal })
   htmlDecks.set(id, html)
   if (DECK_DIR) writeFileSync(join(DECK_DIR, `${id}.html`), html)
   return { status: 'ready', url: `${PUBLIC_URL}/p/${id}`, sources: r.sources }
 }
+
+// Which website viaSocket's own app table lists for an app (read-only; used to check the lookup).
+app.get('/api/catalog/lookup', wrap(async (req, res) => {
+  const hit = await lookup(String(req.query.name ?? ''))
+  res.json(hit ? { name: hit.app.name, domain: hit.domain, matches: hit.matches } : { found: false })
+}))
 
 app.post('/api/partner-deck', wrap(async (req, res) => res.json(await partnerDeck(req.body, req.uid))))
 
@@ -63,10 +71,11 @@ app.post('/api/assets', wrap(async (req, res) => {
 }))
 
 app.get('/p/:id', wrap(async (req, res) => {
-  // Preset partners have a fixed link (/p/aisensy) that is built on first request.
-  if (req.params.id === 'aisensy' && !loadDeck('aisensy')) {
-    const r = await research({ name: 'AiSensy', uid: 'preset' })
-    if (!r.missing) htmlDecks.set('aisensy', await renderHtmlDeck(r.brief, r.assets))
+  // The AiSensy preset has a fixed link; the presenter goes in the link: /p/aisensy?by=Name&cal=username
+  if (req.params.id === 'aisensy') {
+    aisensy ??= await research({ name: 'AiSensy', uid: 'preset', requirePresenter: false })
+    if (aisensy.missing) return res.status(503).send('AiSensy deck is unavailable right now.')
+    return res.type('html').send(await renderHtmlDeck(aisensy.brief, aisensy.assets, { name: req.query.by, cal: req.query.cal }))
   }
   const html = loadDeck(req.params.id)
   if (!html) return res.status(404).send('This deck is no longer stored here. Build it again.')
@@ -78,22 +87,24 @@ app.post('/api/chat', wrap(async (req, res) => {
   const reply = await viasocket().user(req.uid).ai.send({
     threadId: req.body.threadId,
     message: req.body.message,
-    prompt: `You are Partnership Deck Manager. Given an application name, you build an animated 5-slide viaSocket partnership deck and return its shareable link.
-Call partner_deck with the application name (and its domain or brand colour if the user gave them).
-If it returns needs_input, ask the user for exactly the missing items (logo URL, brand colour) and never guess them.
+    prompt: `You are Partnership Deck Manager. Given an application name, you build an animated 6-slide viaSocket partnership deck and return its shareable link.
+Call partner_deck with the application name, the presenter's name and their cal.id link (ask for them if missing), and the domain or brand colour only if the user gave them.
+If it returns needs_input, ask the user for exactly the missing items (logo URL, brand colour, presenter name, cal.id link, website) and never guess them.
 When it returns ready, reply with the link.`,
     tools: [{
       name: 'partner_deck',
-      description: 'Research an application (logo, brand colour, use case) and build its animated 5-slide viaSocket pitch deck. Returns the link or what is missing.',
+      description: 'Research an application (logo, brand colour, use case) and build its animated 6-slide viaSocket pitch deck. Returns the link or what is missing.',
       url: `${PUBLIC_URL}/tools/partner_deck`,
       headers: { Authorization: `Bearer ${TOOL_KEY}`, 'X-User': req.uid },
       fields: {
         name: { type: 'string', description: 'Application name, e.g. AiSensy' },
         domain: { type: 'string', description: 'Website domain if known, e.g. aisensy.com' },
         color: { type: 'string', description: 'Brand colour as hex if the user gave one' },
+        presenterName: { type: 'string', description: 'Name of the person presenting the deck' },
+        cal: { type: 'string', description: 'The presenter’s cal.id username or link' },
         context: { type: 'string', description: 'Anything the user said about the pitch angle' }
       },
-      requiredParams: ['name']
+      requiredParams: ['name', 'presenterName', 'cal']
     }]
   })
   res.json(reply)
@@ -112,7 +123,7 @@ app.get('/.well-known/agent.json', (_req, res) => res.json({
   description: 'Application name in, shareable 5-slide viaSocket partnership deck out. Crawls the partner site for its use case, logo and colour, and asks when it cannot find one.',
   url: PUBLIC_URL,
   skills: [
-    { id: 'partner_deck', description: 'Application name in, link to an animated 5-slide pitch deck out', input: { name: 'string', domain: 'string?', color: 'string?', context: 'string?' } },
+    { id: 'partner_deck', description: 'Application name in, link to an animated 6-slide pitch deck out', input: { name: 'string', presenterName: 'string', cal: 'string (cal.id username or link)', domain: 'string?', color: 'string?', context: 'string?' } },
     { id: 'supply_icon', description: 'Provide a missing icon', input: { name: 'string', url: 'string' } }
   ]
 }))

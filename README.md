@@ -1,6 +1,6 @@
 # Partnership Deck Manager
 
-Application name in, shareable link to an animated 5-slide viaSocket partnership deck out (the design of `viaSocket_x_AiSensy_final`).
+Application name in, shareable link to an animated 6-slide viaSocket partnership deck out (the design of `viaSocket_x_AiSensy_final`).
 
 `POST /api/partner-deck {name, domain?, color?, context?}` → `{status:'ready', url, sources}` or `{status:'needs_input', missing}`. Decks are served at `/p/:id`; AiSensy has a fixed link, `/p/aisensy`.
 

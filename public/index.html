@@ -26,13 +26,17 @@
 <body>
 <main>
   <h1>Partnership Deck Manager</h1>
-  <p class="sub">Type an application name. It reads the partner's website, writes their use case and returns a shareable 5-slide deck. If it can't find something, it asks you.</p>
+  <p class="sub">Type an application name. It reads the partner's website, writes their use case and returns a shareable 6-slide deck. If it can't find something, it asks you.</p>
 
   <section>
     <h2>Build a partner deck</h2>
     <div class="row">
       <div><label>Application name</label><input id="appName" placeholder="AiSensy"></div>
-      <div><label>Website (optional)</label><input id="appDomain" placeholder="aisensy.com"></div>
+      <div><label>Website (optional, viaSocket's own app table is used if empty)</label><input id="appDomain" placeholder="aisensy.com"></div>
+    </div>
+    <div class="row">
+      <div><label>Presenter name</label><input id="presenter" placeholder="Your name" autocomplete="name"></div>
+      <div><label>Presenter's cal.id</label><input id="cal" placeholder="cal.id/yourname or yourname"></div>
     </div>
     <label>Pitch angle (optional)</label>
     <input id="appContext" placeholder="Optional: what they do, or the angle you want">
@@ -60,11 +64,14 @@ const api = async (path, body) => {
 const text = (el, t) => { el.textContent = t }
 const threadId = 'chat-' + Math.random().toString(36).slice(2, 10)
 const extra = {}
+const keep = (k, v) => { try { v === undefined ? localStorage.getItem(k) : localStorage.setItem(k, v) } catch { /* private window */ } }
+try { $('presenter').value = localStorage.getItem('presenter') ?? ''; $('cal').value = localStorage.getItem('cal') ?? '' } catch { /* private window */ }
 async function buildLink() {
   const name = $('appName').value.trim(); if (!name) return
+  keep('presenter', $('presenter').value.trim()); keep('cal', $('cal').value.trim())
   text($('linkOut'), 'Reading ' + name + '’s website and writing the deck… (up to a minute)'); $('needAsk').replaceChildren()
   try {
-    const out = await api('/api/partner-deck', { name, domain: $('appDomain').value.trim() || undefined, context: $('appContext').value.trim() || undefined, ...extra })
+    const out = await api('/api/partner-deck', { name, presenterName: $('presenter').value.trim(), cal: $('cal').value.trim(), domain: $('appDomain').value.trim() || undefined, context: $('appContext').value.trim() || undefined, ...extra })
     if (out.status === 'needs_input') return askNeeds(name, out.missing)
     const url = new URL(out.url, location.href).href
     $('linkOut').innerHTML = ''
@@ -74,7 +81,7 @@ async function buildLink() {
     const s = out.sources
     if (!s.aiTailored) { const w = document.createElement('div'); w.className = 'warn'; w.textContent = 'Not tailored: ' + s.brief + '. The slides use generic wording, not ' + name + '’s real use case.'; $('linkOut').append(w) }
     const d = document.createElement('details'); const sum = document.createElement('summary'); sum.textContent = 'What it read'; d.append(sum)
-    const lines = ['Use case written by: ' + s.brief, 'Logo: ' + s.logo, 'Colour: ' + s.color, 'Apps their site mentions: ' + (s.appsMentioned.join(', ') || 'none found'), 'Pages read (' + s.pagesRead.length + '):']
+    const lines = ['Website: ' + (s.site ?? 'none') + ' (' + (s.domainFrom ?? 'n/a') + ')', 'Use case written by: ' + s.brief, 'Logo: ' + s.logo, 'Colour: ' + s.color, 'Apps their site mentions: ' + (s.appsMentioned.join(', ') || 'none found'), 'Pages read (' + s.pagesRead.length + '):']
     for (const t of lines) { const p = document.createElement('div'); p.textContent = t; d.append(p) }
     const ul = document.createElement('ul'); for (const u of s.pagesRead) { const li = document.createElement('li'); li.textContent = u; ul.append(li) } d.append(ul)
     d.style.color = 'var(--mute)'; d.style.marginTop = '8px'; $('linkOut').append(d)
@@ -94,6 +101,8 @@ function askNeeds(name, missing) {
         if (m.field === 'color') extra.color = input.value.trim()
         else if (m.field === 'context') $('appContext').value = input.value.trim()
         else if (m.field === 'domain') $('appDomain').value = input.value.trim()
+        else if (m.field === 'presenter') $('presenter').value = input.value.trim()
+        else if (m.field === 'cal') $('cal').value = input.value.trim()
         else await api('/api/assets', { name: m.name, field: m.field, url: input.value.trim() })
         row.remove(); if (!$('needAsk').children.length) buildLink()
       } catch (e) { alert(e.message) }

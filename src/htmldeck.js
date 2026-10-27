@@ -16,7 +16,7 @@ export const AISENSY_FINAL = {
   heroLines: ['Give AiSensy’s', 'AI agents the', 'power to act'],
   subtitle: 'Native integrations and agent tools for 2,300+ apps, inside AiSensy.',
   problem: {
-    title: 'Your agent can talk. Can it act?',
+    title: 'Your product and agents can talk. Can they act?',
     asks: [
       ['“Where’s my order?”', 'Needs Shopify / WooCommerce'],
       ['“Book a demo for Friday”', 'Needs Google Calendar'],
@@ -24,7 +24,7 @@ export const AISENSY_FINAL = {
       ['“I’ve paid, send my invoice”', 'Needs Razorpay / PayU']
     ],
     route: ['AiSensy', 'Automation tool', 'customer’s apps'],
-    detour: 'A detour outside AiSensy, and the agent can’t use any of it.'
+    detour: 'A detour outside AiSensy, unusable by your product or agents.'
   },
   engine: ['One Connect button, on Google’s own consent screen', 'Tokens, mapping and events handled', 'Same connection works as a tool for the agent'],
   mock: {
@@ -52,7 +52,7 @@ export const AISENSY_FINAL = {
   banner: ['viaSocket adds to what you have.', 'It doesn’t replace it.'],
   notes: [
     'Open with the core idea: AiSensy’s AI Agent Builder can already understand customers. viaSocket lets it take action in the apps those customers already use.',
-    'Customers ask the agent for things that live in other apps. Today many AiSensy customers connect those apps through third-party automation tools: they leave AiSensy to set it up, pay for another tool, and the new AI agent still can’t call those apps as tools.',
+    'Customers ask the agent for things that live in other apps. Today many AiSensy customers connect those apps through third-party automation tools: they leave AiSensy to set it up, pay for another tool, and neither the product nor the new AI agent can call those apps as tools.',
     'AiSensy’s own Campaign Agent, re-drawn as an illustrative mock. When the agent needs an app the customer hasn’t connected, it asks, and the Connect button runs viaSocket: Google’s consent screen opens, the customer approves, and viaSocket stores and refreshes the token and maps the data. Click to show the reverse direction: a Razorpay payment or a new order triggers an AiSensy template, which drives WhatsApp volume. Where the Connect moment sits is for AiSensy’s product team to shape.',
     'Objection 1: agree, and position viaSocket as the apps their customers ask for next. Lead with the apps shown, not with a catalogue number. Objection 2: that path sends customers out of AiSensy and adds a tool and a bill; with viaSocket, integrations stay inside AiSensy, under its brand, and become something AiSensy can package into higher plans. Keep the tone friendly and avoid naming other tools.',
     'The setup is one prompt pasted into a coding agent. It asks for credentials, builds the connect flow, tools and triggers, and finishes with a real test call. A working prototype is realistic in about 15 minutes; rolling it out to customers is a short beta after that.'
@@ -66,7 +66,7 @@ export function genericBrief({ name, color, domain, description = '' }) {
     heroLines: [`Give ${name}’s`, 'users the', 'power to act'],
     subtitle: `Native integrations and agent tools for 2,300+ apps, inside ${name}.`,
     problem: {
-      title: 'Your product can talk. Can it act?',
+      title: 'Your product and agents can talk. Can they act?',
       asks: [
         ['“Sync my new leads”', 'Needs HubSpot / Zoho CRM'],
         ['“Log this in our sheet”', 'Needs Google Sheets'],
@@ -74,7 +74,7 @@ export function genericBrief({ name, color, domain, description = '' }) {
         ['“Did the payment go through?”', 'Needs Razorpay / Stripe']
       ],
       route: [name, 'Automation tool', 'customer’s apps'],
-      detour: `A detour outside ${name}, and none of it is yours.`
+      detour: `A detour outside ${name}, unusable by your product or agents.`
     },
     engine: ['One Connect button, on the app’s own consent screen', 'Tokens, mapping and events handled', 'Same connection works as a tool for your AI'],
     mock: {
@@ -102,7 +102,7 @@ export function genericBrief({ name, color, domain, description = '' }) {
   }
 }
 
-function slides(b, a, M) {
+function slides(b, a, M, who) {
   const p = esc(b.partner.name)
   const foot = (n) => `  <footer class="foot"><span>viaSocket × ${p}</span><span>${n}</span></footer>`
   const partnerImg = (cls) => (a.partnerLogo ? `<img class="${cls}" src="${a.partnerLogo}" alt="${p}">` : `<span class="${cls}" style="display:grid;place-items:center;background:#fff;font:700 22px Geist;color:var(--ink)">${p}</span>`)
@@ -119,7 +119,7 @@ function slides(b, a, M) {
   const [r1, r2, r3] = b.problem.route.map(esc)
 
   return `
-<section class="slide light v3" id="slide-1" data-steps="0" aria-label="Slide 1 of 5: title">
+<section class="slide light v3" id="slide-1" data-steps="0" aria-label="Slide 1 of 6: title">
   <div class="lp wide"></div><div class="gp"></div>
   <h1 class="hero-t">${b.heroLines.map((l) => `<span class="ln"><span>${esc(l)}</span></span>`).join('')}</h1>
   <p class="hero-s">${esc(b.subtitle)}</p>
@@ -131,7 +131,7 @@ function slides(b, a, M) {
   <p class="hero-f">viaSocket × ${p} · Partnership proposal</p>
 </section>
 
-<section class="slide light v3" id="slide-2" data-steps="1" aria-label="Slide 2 of 5">
+<section class="slide light v3" id="slide-2" data-steps="1" aria-label="Slide 2 of 6">
   <div class="lp"></div>
   <h2 class="t">${esc(b.problem.title)}</h2>
   <ul class="v3-asks bstep d1" data-step="0">${b.problem.asks.map(([q, n], k) => `<li class="rowin" style="--k:${k}"><span class="q">${esc(q)}</span><span class="n">${esc(n)}</span></li>`).join('')}</ul>
@@ -139,7 +139,7 @@ function slides(b, a, M) {
 ${foot(2)}
 </section>
 
-<section class="slide light v3" id="slide-3" data-steps="1" aria-label="Slide 3 of 5">
+<section class="slide light v3" id="slide-3" data-steps="1" aria-label="Slide 3 of 6">
   <div class="lp"></div>
   <h2 class="t">Your UI. viaSocket’s engine.</h2>
   <div class="eng on-lp">
@@ -186,7 +186,7 @@ ${b.engine.map((t) => `      <li class="eng-pt">${M.check}<span>${esc(t)}</span>
 ${foot(3)}
 </section>
 
-<section class="slide light v3" id="slide-4" data-steps="3" aria-label="Slide 4 of 5">
+<section class="slide light v3" id="slide-4" data-steps="3" aria-label="Slide 4 of 6">
   <div class="lp"></div>
   <h2 class="t">Don’t we already have this covered?</h2>
   <p class="banner v3-ban bstep" data-step="3">${esc(b.banner[0])} <span>${esc(b.banner[1])}</span></p>
@@ -198,34 +198,75 @@ ${b.objections.map((o, i) => `  <div class="v3-obj bstep d3" data-step="${i + 1}
 ${foot(4)}
 </section>
 
-<section class="slide light v3" id="slide-5" data-steps="0" aria-label="Slide 5 of 5">
+<section class="slide light v3" id="slide-5" data-steps="0" aria-label="Slide 5 of 6">
   <div class="lp"></div>
   <h2 class="t">Live in about 15 minutes</h2>
   <p class="beta">Then a short beta with real customers.</p>
   <ol class="vsteps"><span class="vrail"><span class="vrail-fill"></span></span><li class="vstep" style="--k:0"><span class="num">1</span><div><h3>Paste the prompt</h3><p>Into Cursor, Claude Code or Codex.</p></div></li><li class="vstep" style="--k:1"><span class="num">2</span><div><h3>Add credentials</h3><p>Org ID, project ID and secret, kept in <code>.env</code>.</p></div></li><li class="vstep" style="--k:2"><span class="num">3</span><div><h3>It builds</h3><p>Connect flow, agent tools and triggers.</p></div></li><li class="vstep" style="--k:3"><span class="num">4</span><div><h3>Real test call</h3><p>Against a connected app.</p></div></li></ol>
 ${foot(5)}
 </section>
+
+<section class="slide light v3" id="slide-6" data-steps="0" aria-label="Slide 6 of 6">
+  <div class="lp"></div>
+  <h2 class="t">viaSocket, the integration layer</h2>
+  <div class="who bstep" data-step="0">
+${who.name ? `    <small>Presented by</small>\n    <b>${esc(who.name)}</b>\n` : ''}${who.cal ? `    <a href="${esc(who.cal.url)}" target="_blank" rel="noopener"><span class="k">Book a call</span> ${esc(who.cal.label)}</a>\n` : ''}    <a href="https://viasocket.com" target="_blank" rel="noopener"><span class="k">Learn more</span> viasocket.com</a>
+  </div>
+  <p class="intro-lead bstep" data-step="0">One layer between your product and the apps your customers already use.</p>
+  <ul class="intro-rows bstep" data-step="0">
+    <li class="rowin" style="--k:0"><span class="iv">Connect</span><span class="it">Your users link their own accounts, inside your UI.</span></li>
+    <li class="rowin" style="--k:1"><span class="iv">Act</span><span class="it">Your product and your agents run actions in those apps.</span></li>
+    <li class="rowin" style="--k:2"><span class="iv">Listen</span><span class="it">Events in those apps start flows in ${esc(b.partner.name)}.</span></li>
+  </ul>
+${foot(6)}
+</section>
 `
 }
 
 const js = (v) => JSON.stringify(v).replace(/</g, '\\u003c')
 
-export async function renderHtmlDeck(brief, assets = {}) {
+/** The cal.id link: a full URL, `cal.id/name`, or just the username. */
+export function calLink(input) {
+  const v = String(input ?? '').trim()
+  if (!v) return null
+  const user = v.replace(/^https?:\/\//i, '').replace(/^(www\.)?cal\.id\//i, '').replace(/^@/, '').replace(/[?#].*$/, '').replace(/\/+$/, '')
+  if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(user)) return null
+  return { url: `https://cal.id/${user}`, label: `cal.id/${user}` }
+}
+
+const CLOSING_CSS = `<style>
+.v3 .intro-lead{position:absolute;left:496px;top:96px;width:700px;font-size:38px;line-height:1.16;letter-spacing:-.03em;font-weight:600;color:var(--text)}
+.v3 .intro-rows{position:absolute;left:496px;top:276px;width:728px}
+.v3 .intro-rows li{display:grid;grid-template-columns:150px 1fr;align-items:baseline;gap:20px;padding:20px 0;border-top:1px solid var(--line)}
+.v3 .intro-rows li:last-child{border-bottom:1px solid var(--line)}
+.v3 .intro-rows .iv{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sec-deep)}
+.v3 .intro-rows .it{font-size:23px;line-height:1.35;color:var(--text-2)}
+.v3 .who{position:absolute;left:56px;top:372px;width:340px;color:#fff}
+.v3 .who small{display:block;font-size:14px;color:var(--on-dark-3);margin-bottom:6px}
+.v3 .who b{display:block;font-size:30px;line-height:1.1;font-weight:600;letter-spacing:-.02em;margin-bottom:26px}
+.v3 .who a{display:block;margin-top:10px;font-size:19px;color:#fff;text-decoration:none;overflow-wrap:anywhere}
+.v3 .who a .k{display:block;font-size:13px;color:var(--sec);margin-bottom:2px}
+@media print{.v3 .who a{text-decoration:none}}
+</style>
+`
+
+export async function renderHtmlDeck(brief, assets = {}, presenter = {}) {
   const c = brief.partner.color
   const sec = { color: c, deep: brief.partner.deep ?? mix(c, 0, 0.55), tint: brief.partner.tint ?? mix(c, 255, 0.88) }
   const a = { partnerLogo: null, brands: {}, ...assets }
+  const who = { name: String(presenter.name ?? '').trim(), cal: calLink(presenter.cal) }
   const html = (await TEMPLATE)
     .replace('__TITLE__', () => `viaSocket × ${esc(brief.partner.name)} · Partnership proposal`)
     .replace('__SEC__', sec.color).replace('__SEC_DEEP__', sec.deep).replace('__SEC_TINT__', sec.tint)
     .replaceAll('__SEC_RGB__', rgb(c).join(','))
-    .replace('__NOTES__', () => js(brief.notes))
+    .replace('__NOTES__', () => js([...brief.notes, `Close by introducing viaSocket as the layer that connects the partner’s product and agents to their customers’ apps.${who.name ? ` ${who.name} presents and takes questions` : ''}${who.cal ? `; the call link is ${who.cal.label}` : ''}${who.name || who.cal ? '.' : ''}`]))
     .replace('__TYPED__', () => js(brief.mock.typed))
   // The final deck puts ink on the partner colour; a dark partner colour needs white instead.
   const lum = rgb(c).map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((t, v, i) => t + v * [0.2126, 0.7152, 0.0722][i], 0)
   // Embarko adds a dismissible badge at the bottom left of hosted pages; keep the Back button clear of it.
   const hostFix = '<style>.controls{padding-left:136px}@media print{.controls{display:none}}</style>\n'
   const tileFix = a.partnerTile ? '<style>.logo-ais,.tn-ic.tile img{background:#fff;object-fit:contain;box-sizing:border-box}.logo-ais{padding:18px}.tn-ic.tile img{padding:6px}</style>\n' : ''
-  const darkFix = hostFix + tileFix + (lum < 0.3 ? '<style>.v3{--lit-fg:#fff}.hero-q mark,.connect:not(.done){color:#fff}.mock .hero-lbl{color:var(--sec-tint)}@media print{.num{color:#fff !important}}</style>\n</head>' : '</head>')
+  const darkFix = CLOSING_CSS + hostFix + tileFix + (lum < 0.3 ? '<style>.v3{--lit-fg:#fff}.hero-q mark,.connect:not(.done){color:#fff}.mock .hero-lbl{color:var(--sec-tint)}@media print{.num{color:#fff !important}}</style>\n</head>' : '</head>')
   const marks = await MARKS
-  return html.replace('</head>', () => darkFix).replace('<!--__SLIDES__-->', () => slides(brief, a, marks))
+  return html.replace('</head>', () => darkFix).replace('<!--__SLIDES__-->', () => slides(brief, a, marks, who))
 }
