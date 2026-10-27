@@ -2,7 +2,7 @@ import sharp from 'sharp'
 import { readFileSync } from 'node:fs'
 import * as icons from './icons.js'
 import { viasocket } from './viasocket.js'
-import { AISENSY_FINAL, genericBrief, calLink } from './htmldeck.js'
+import { AISENSY_FINAL, genericBrief, calLink, cleanExtras, EXTRA_CAPABILITIES } from './htmldeck.js'
 import { lookup } from './catalog.js'
 
 const UA = { 'user-agent': 'Mozilla/5.0 (compatible; PartnershipDeckManager/1.0)' }
@@ -162,6 +162,7 @@ Return ONLY a JSON object with exactly the keys and nesting of the example, rewr
 - heroLines is the headline in three short lines. mock.product is a real screen or feature of the partner's product; mock.question marks one word in [brackets]; mock.typed is what a customer types there.
 - trigger.nodes is four [label, icon] pairs: icon is an app name above, "viasocket" or "partner"; the second is always ["viaSocket","viasocket"].
 - objections[0].apps lists apps the partner's own customers would plausibly ask for next, from the list above; never pad it with unrelated apps.
+- extras is [] unless the partner's own site shows a real need for one of these other viaSocket capabilities: ${EXTRA_CAPABILITIES.join(', ')}. Meanings: "Browser user" = an agent can use a web browser like a person, for sites with no API; "AI calls" = AI model calls (OpenAI and more) can go through viaSocket pass, optional, so the partner needn't manage model keys; "Long-term memory" = agents remember across conversations; "Schedules" = actions run on a timetable; "Triggers" = app events start flows. Add at most two, as { "label": <one name from that list, exactly>, "text": <one short line in this partner's terms, under 90 characters> }. Never add one just to fill the slide, never describe how it works beyond its meaning above, and never invent other capabilities or any numbers, prices or limits. Where one fits naturally, you may also use it in a customer question ("Needs a schedule"), the demo or the trigger strip.
 - notes is five speaker-note strings. Leave partner exactly as given.`
 
 /** The product's AI drafts the brief from the partner's site, per run. */
@@ -182,7 +183,7 @@ async function draftBrief(uid, partner, pages, apps, context) {
   const b = reply.content
   const ok = b && typeof b === 'object' && b.heroLines?.length && b.problem?.asks?.length && b.problem?.route?.length === 3 && b.mock?.typed && b.trigger?.nodes?.length && b.objections?.length === 2 && b.notes?.length === 5
   if (!ok) throw new Error('AI draft incomplete')
-  return { ...b, partner }
+  return { ...b, partner, extras: cleanExtras(b.extras) }
 }
 
 /**

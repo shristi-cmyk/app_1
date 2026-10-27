@@ -50,6 +50,7 @@ export const AISENSY_FINAL = {
     { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans.', apps: [] }
   ],
   banner: ['viaSocket adds to what you have.', 'It doesn’t replace it.'],
+  extras: [],
   notes: [
     'Open with the core idea: AiSensy’s AI Agent Builder can already understand customers. viaSocket lets it take action in the apps those customers already use.',
     'Customers ask the agent for things that live in other apps. Today many AiSensy customers connect those apps through third-party automation tools: they leave AiSensy to set it up, pay for another tool, and neither the product nor the new AI agent can call those apps as tools.',
@@ -92,6 +93,7 @@ export function genericBrief({ name, color, domain, description = '' }) {
       { quote: '“Customers can just use an automation tool.”', answer: 'Keep customers inside your product.', body: 'No extra tool or bill for them, and it’s yours to brand and package into your plans.', apps: [] }
     ],
     banner: ['viaSocket adds to what you have.', 'It doesn’t replace it.'],
+    extras: [],
     notes: [
       `Open with the core idea for ${name}. ${description}`.trim(),
       'Customers ask for things that live in other apps; today they leave the product to wire them up.',
@@ -213,10 +215,10 @@ ${foot(5)}
 ${who.name ? `    <small>Presented by</small>\n    <b>${esc(who.name)}</b>\n` : ''}${who.cal ? `    <a href="${esc(who.cal.url)}" target="_blank" rel="noopener"><span class="k">Book a call</span> ${esc(who.cal.label)}</a>\n` : ''}    <a href="https://viasocket.com" target="_blank" rel="noopener"><span class="k">Learn more</span> viasocket.com</a>
   </div>
   <p class="intro-lead bstep" data-step="0">One layer between your product and the apps your customers already use.</p>
-  <ul class="intro-rows bstep" data-step="0">
+  <ul class="intro-rows bstep${cleanExtras(b.extras).length ? ' tight' : ''}" data-step="0">
     <li class="rowin" style="--k:0"><span class="iv">Connect</span><span class="it">Your users link their own accounts, inside your UI.</span></li>
     <li class="rowin" style="--k:1"><span class="iv">Act</span><span class="it">Your product and your agents run actions in those apps.</span></li>
-    <li class="rowin" style="--k:2"><span class="iv">Listen</span><span class="it">Events in those apps start flows in ${esc(b.partner.name)}.</span></li>
+    <li class="rowin" style="--k:2"><span class="iv">Listen</span><span class="it">Events in those apps start flows in ${esc(b.partner.name)}.</span></li>${cleanExtras(b.extras).map((e, i) => `\n    <li class="rowin" style="--k:${3 + i}"><span class="iv">${esc(e.label)}</span><span class="it">${esc(e.text)}</span></li>`).join('')}
   </ul>
 ${foot(6)}
 </section>
@@ -224,6 +226,21 @@ ${foot(6)}
 }
 
 const js = (v) => JSON.stringify(v).replace(/</g, '\\u003c')
+
+// Other viaSocket capabilities a deck may mention, only when the partner's use case needs one.
+export const EXTRA_CAPABILITIES = ['Browser user', 'AI calls', 'Long-term memory', 'Schedules', 'Triggers']
+
+/** At most two { label, text } rows, labels from the fixed list above, so the AI cannot invent a feature. */
+export function cleanExtras(extras) {
+  const seen = new Set()
+  return (Array.isArray(extras) ? extras : []).flatMap((e) => {
+    const label = EXTRA_CAPABILITIES.find((c) => c.toLowerCase() === String(e?.label ?? '').trim().toLowerCase())
+    const text = String(e?.text ?? '').trim()
+    if (!label || !text || text.length > 120 || seen.has(label)) return []
+    seen.add(label)
+    return [{ label, text }]
+  }).slice(0, 2)
+}
 
 /** The cal.id link: a full URL, `cal.id/name`, or just the username. */
 export function calLink(input) {
@@ -236,8 +253,11 @@ export function calLink(input) {
 
 const CLOSING_CSS = `<style>
 .v3 .intro-lead{position:absolute;left:496px;top:96px;width:700px;font-size:38px;line-height:1.16;letter-spacing:-.03em;font-weight:600;color:var(--text)}
-.v3 .intro-rows{position:absolute;left:496px;top:276px;width:728px}
-.v3 .intro-rows li{display:grid;grid-template-columns:150px 1fr;align-items:baseline;gap:20px;padding:20px 0;border-top:1px solid var(--line)}
+.v3 .intro-rows{position:absolute;left:496px;top:262px;width:728px}
+.v3 .intro-rows li{display:grid;grid-template-columns:176px 1fr;align-items:baseline;gap:20px;padding:20px 0;border-top:1px solid var(--line)}
+.v3 .intro-rows.tight{top:232px}
+.v3 .intro-rows.tight li{padding:12px 0}
+.v3 .intro-rows.tight .it{font-size:21px}
 .v3 .intro-rows li:last-child{border-bottom:1px solid var(--line)}
 .v3 .intro-rows .iv{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sec-deep)}
 .v3 .intro-rows .it{font-size:23px;line-height:1.35;color:var(--text-2)}
