@@ -391,7 +391,9 @@ export async function renderHtmlDeck(brief, assets = {}, presenter = {}) {
   // Embarko adds a dismissible badge at the bottom left of hosted pages; keep the Back button clear of it.
   const hostFix = '<style>.controls{padding-left:136px}@media print{.controls{display:none}}</style>\n'
   const tileFix = a.partnerTile ? '<style>.logo-ais,.tn-ic.tile img{background:#fff;object-fit:contain;box-sizing:border-box}.logo-ais{padding:18px}.tn-ic.tile img{padding:6px}</style>\n' : ''
-  const darkFix = DECK_CSS + hostFix + tileFix + (lum < 0.3 ? '<style>.v3{--lit-fg:#fff}.hero-q mark,.connect:not(.done){color:#fff}.mock .hero-lbl{color:var(--sec-tint)}@media print{.num{color:#fff !important}}</style>\n</head>' : '</head>')
+  // Partner colour used as text: on the black panels a dark colour disappears (use white), on white a light one does (use the deep shade).
+  const textFix = `<style>${lum < 0.3 ? '.v3 .t .hl{color:#fff}' : ''}${lum > 0.45 ? '.v3 .s2-stack .cal{color:var(--sec-deep)}' : ''}</style>\n`
+  const darkFix = DECK_CSS + hostFix + tileFix + textFix + (lum < 0.3 ? '<style>.v3{--lit-fg:#fff}.hero-q mark,.connect:not(.done){color:#fff}.mock .hero-lbl{color:var(--sec-tint)}@media print{.num{color:#fff !important}}</style>\n</head>' : '</head>')
   const marks = await MARKS
   return html.replace('</head>', () => darkFix).replace('<!--__SLIDES__-->', () => slides(brief, a, marks, who))
 }
