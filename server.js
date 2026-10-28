@@ -7,7 +7,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import * as icons from './src/icons.js'
 import { research } from './src/research.js'
 import { lookup, listed } from './src/catalog.js'
-import { renderHtmlDeck } from './src/htmldeck.js'
+import { renderHtmlDeck, calLink } from './src/htmldeck.js'
+import { recall, remember, list as storedPartners } from './src/store.js'
 import { viasocket, ViaSocketError } from './src/viasocket.js'
 
 const app = express()
@@ -45,8 +46,22 @@ const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 
 async function partnerDeck(input, uid) {
   if (!input?.name) throw new Error('name (the application name) is required')
-  const r = await research({ ...input, uid })
-  if (r.missing) return { status: 'needs_input', missing: r.missing, found: r.found }
+  // First time for a partner: research it and store the result. After that reuse it (refresh, or giving a
+  // website, colour or description, researches again and replaces it). The presenter still has to be given.
+  const fresh = input.refresh || input.domain || input.color || input.context
+  const stored = fresh ? null : recall(input.name)
+  let r
+  if (stored) {
+    const missing = []
+    if (!String(input.presenterName ?? '').trim()) missing.push({ field: 'presenter', name: input.name, hint: 'Who is presenting this deck? (their name, shown on the last slide)' })
+    if (!calLink(input.cal)) missing.push({ field: 'cal', name: input.name, hint: 'The presenter’s cal.id link or username (e.g. cal.id/yourname or just yourname)' })
+    if (missing.length) return { status: 'needs_input', missing }
+    r = { ...stored, sources: { ...stored.sources, fromStore: true } }
+  } else {
+    r = await research({ ...input, uid })
+    if (r.missing) return { status: 'needs_input', missing: r.missing, found: r.found }
+    remember(input.name, { brief: r.brief, assets: r.assets, sources: r.sources })
+  }
   const id = `${slugify(input.name)}-${randomUUID().slice(0, 6)}`
   const html = await renderHtmlDeck(r.brief, r.assets, { name: input.presenterName, cal: input.cal })
   htmlDecks.set(id, html)
@@ -62,6 +77,7 @@ app.get('/api/catalog/lookup', wrap(async (req, res) => {
   res.json({ ...(hit ? { name: hit.app.name, domain: hit.domain, matches: hit.matches } : { found: false }), listed: ok ? ok.has(name) : null })
 }))
 
+app.get('/api/partners', (_req, res) => res.json(storedPartners()))
 app.post('/api/partner-deck', wrap(async (req, res) => res.json(await partnerDeck(req.body, req.uid))))
 
 app.post('/api/assets', wrap(async (req, res) => {
