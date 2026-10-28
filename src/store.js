@@ -1,4 +1,3 @@
-import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -8,6 +7,7 @@ const MAX_AGE = 30 * 24 * 3600 * 1000
 let db = null
 if (process.env.DATA_DIR) {
   try {
+    const { DatabaseSync } = await import('node:sqlite')
     mkdirSync(process.env.DATA_DIR, { recursive: true })
     db = new DatabaseSync(join(process.env.DATA_DIR, 'partners.db'))
     db.exec('PRAGMA journal_mode=WAL')
