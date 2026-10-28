@@ -74,6 +74,7 @@ async function buildLink() {
     const out = await api('/api/partner-deck', { name, presenterName: $('presenter').value.trim(), cal: $('cal').value.trim(), domain: $('appDomain').value.trim() || undefined, context: $('appContext').value.trim() || undefined, ...extra })
     if (out.status === 'needs_input') return askNeeds(name, out.missing)
     const url = new URL(out.url, location.href).href
+    for (const k of Object.keys(extra)) delete extra[k] // a colour typed for this partner must not leak into the next
     $('linkOut').innerHTML = ''
     const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.textContent = url
     const copy = document.createElement('button'); copy.className = 'ghost'; copy.textContent = 'Copy link'; copy.onclick = () => navigator.clipboard.writeText(url)

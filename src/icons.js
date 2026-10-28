@@ -64,7 +64,7 @@ export async function supplyFromUrl(name, url) {
 
 /**
  * Find an icon for `name`. `kind` 'brand' tries the open icon set first (white marks for dark
- * circles); 'logo' crawls `domain`. Returns null when nothing was found, so the caller can ask.
+ * circles); 'logo' crawls `domain` (the open set's marks are white, so they are never a partner's logo). Returns null when nothing was found, so the caller can ask.
  */
 export async function resolve(name, { domain, kind = 'logo' } = {}) {
   const k = `${kind}:${key(name)}`
@@ -72,7 +72,7 @@ export async function resolve(name, { domain, kind = 'logo' } = {}) {
   if (cache.has(k)) return cache.get(k)
   const tries = kind === 'brand'
     ? [() => fromSimpleIcons(name), () => domain && fromSite(domain)]
-    : [() => domain && fromSite(domain), () => fromSimpleIcons(name)]
+    : [() => domain && fromSite(domain)]
   for (const t of tries) {
     try {
       const hit = await t()
