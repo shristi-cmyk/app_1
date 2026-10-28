@@ -358,15 +358,15 @@ const DECK_CSS = `<style>
 .v3 .s4-cmp .in li::before{content:"✓";position:absolute;left:3px;color:var(--sec-deep);font-weight:700}
 /* slide 6: formal closing */
 .v3.end1{background:var(--paper)}
-.v3.end1 .e1-logos{left:0;right:0;top:52px;bottom:auto;height:76px;justify-content:center;gap:22px}
+.v3.end1 .e1-logos{left:0;right:0;top:100px;bottom:auto;height:76px;justify-content:center;gap:22px}
 .v3.end1 .e1-logos .logo-ais{width:76px;height:76px;box-shadow:0 0 0 1px var(--line),0 10px 28px -14px rgba(0,0,0,.35)}
 .v3.end1 .e1-logos .logo-vs{width:76px;height:76px}
 .v3.end1 .e1-logos .link{width:52px}
-.v3.end1 .hero-t{left:0;right:0;width:100%;text-align:center;top:232px;font-size:104px;line-height:1;letter-spacing:-.045em;color:var(--text)}
-.v3.end1 .e1-note{left:0;right:0;width:100%;text-align:center;top:368px;color:var(--text)}
+.v3.end1 .hero-t{left:0;right:0;width:100%;text-align:center;top:224px;font-size:104px;line-height:1;letter-spacing:-.045em;color:var(--text)}
+.v3.end1 .e1-note{left:0;right:0;width:100%;text-align:center;top:358px;color:var(--text)}
 .v3.end1 .e1-note .n1{font-size:30px;line-height:1.25;letter-spacing:-.02em;font-weight:600;color:var(--text);margin:0 auto;max-width:860px}
 .v3.end1 .e1-note .n2{font-size:23px;line-height:1.4;color:var(--text-2);margin:12px auto 0;max-width:860px}
-.v3.end1 .e1-sig{left:0;right:0;width:100%;bottom:84px;text-align:center;color:var(--text)}
+.v3.end1 .e1-sig{left:0;right:0;width:100%;bottom:104px;text-align:center;color:var(--text)}
 .v3.end1 .e1-sig:before{content:"";display:block;width:56px;height:4px;border-radius:2px;background:var(--sec);margin:0 auto 26px}
 .v3.end1 .e1-sig b{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em;margin-bottom:10px}
 .v3.end1 .e1-sig span{display:block;font-size:22px;color:var(--text-2)}
