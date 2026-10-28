@@ -74,7 +74,7 @@ app.get('/api/catalog/lookup', wrap(async (req, res) => {
   const name = String(req.query.name ?? '')
   const hit = await lookup(name)
   const ok = await listed([name])
-  res.json({ ...(hit ? { name: hit.app.name, domain: hit.domain, matches: hit.matches } : { found: false }), listed: ok ? ok.has(name) : null })
+  res.json({ ...(hit ? { name: hit.app.name, domain: hit.domain, matches: hit.matches, iconUrl: hit.app.iconUrl } : { found: false }), listed: ok ? ok.has(name) : null })
 }))
 
 app.get('/api/partners', (_req, res) => res.json(storedPartners()))
