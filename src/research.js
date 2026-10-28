@@ -4,7 +4,7 @@ import * as icons from './icons.js'
 import { viasocket } from './viasocket.js'
 import { AISENSY_FINAL, RESERVE, genericBrief, calLink, cleanExtras, EXTRA_CAPABILITIES } from './htmldeck.js'
 import { lookup, listed, namesIn } from './catalog.js'
-import { fetchLogos } from './logos.js'
+import { fetchLogos, catalogLogo } from './logos.js'
 
 const UA = { 'user-agent': 'Mozilla/5.0 (compatible; PartnershipDeckManager/1.0)' }
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -284,12 +284,7 @@ export async function research({ name, domain, color, context, presenterName, ca
   // Logo: the bundled preset logo, then crawl the site, then viaSocket's catalog icon for the app.
   let logo = isAisensy ? { data: `image/png;base64,${readFileSync(new URL('./presets/aisensy.png', import.meta.url)).toString('base64')}`, source: 'AiSensy final deck' } : null
   logo ??= await icons.resolve(name, { domain: host, kind: 'logo' })
-  if (!logo) {
-    try {
-      const iconUrl = catalogApp?.iconUrl || (await viasocket().catalog.search(name)).find((a) => slug(a.name) === slug(name))?.iconUrl
-      if (iconUrl) { await icons.supplyFromUrl(name, iconUrl); logo = await icons.resolve(name) }
-    } catch { /* catalog unreachable */ }
-  }
+  logo ??= await catalogLogo(name)
   const brand = await brandColor(color ?? (isAisensy ? AISENSY_FINAL.partner.color : undefined), info.themeColor, logo?.data && dataUri(logo.data))
 
   const missing = []

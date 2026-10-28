@@ -29,3 +29,15 @@ export async function fetchLogos(names) {
   await Promise.all(unique.map(async (n) => { const u = await one(n); if (u) out[n] = u }))
   return out
 }
+
+/** viaSocket's own logo for an app at slide size, as { data: 'image/png;base64,…', source }, or null. */
+export async function catalogLogo(name) {
+  try {
+    const row = await find(name)
+    if (!row?.iconUrl) return null
+    const res = await fetch(row.iconUrl, { signal: AbortSignal.timeout(8000) })
+    if (!res.ok) return null
+    const png = await sharp(Buffer.from(await res.arrayBuffer()), { density: 300 }).resize(256, 256, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer()
+    return { data: `image/png;base64,${png.toString('base64')}`, source: 'viaSocket catalog' }
+  } catch { return null }
+}
