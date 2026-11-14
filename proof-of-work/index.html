@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proof of Work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0b10; --panel:#15131c; --panel2:#1c1926; --line:#2a2638; --ink:#f3efe6; --mute:#8b8599;
+  --lime:#c6ff3d; --amber:#ffb23d; --rose:#ff5d7a; --cyan:#4de2ff; --violet:#9b7bff;
+  --r:18px;
+}
+:root[data-theme="light"]{
+  --bg:#f4efe4; --panel:#fffaf0; --panel2:#f0e9d9; --line:#ddd3bc; --ink:#1b1812; --mute:#7a705c;
+  --lime:#3f8f00; --amber:#c97800; --rose:#d4264a; --cyan:#0a8aa8; --violet:#6a44e0;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 'Space Grotesk',system-ui,sans-serif;min-height:100vh;
+  background-image:radial-gradient(900px 500px at 85% -10%,rgba(155,123,255,.18),transparent),radial-gradient(700px 500px at -10% 110%,rgba(198,255,61,.10),transparent);
+  background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 80px;position:relative}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.logo{font-family:Fraunces,serif;font-size:26px;letter-spacing:-.5px}
+.logo i{color:var(--lime);font-style:italic}
+.tag{font:600 11px 'JetBrains Mono',monospace;color:var(--mute);letter-spacing:.12em;text-transform:uppercase}
+.sp{flex:1}
+.tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:4px;gap:2px}
+.tabs button{border:0;background:none;color:var(--mute);font:500 14px inherit;font-family:inherit;padding:8px 16px;border-radius:99px;cursor:pointer}
+.tabs button.on{background:var(--lime);color:#10130a;font-weight:700}
+.ib{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:8px 14px;cursor:pointer;font:inherit;font-size:13px}
+.ib:hover{border-color:var(--lime)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.grid{display:grid;gap:16px}
+h2{font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-bottom:14px}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center}
+@media(max-width:640px){.hero{grid-template-columns:1fr;justify-items:center;text-align:center}}
+.ring{position:relative;width:190px;height:190px}
+.ring svg{transform:rotate(-90deg)}
+.ring .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.big{font-family:Fraunces,serif;font-size:54px;line-height:1;letter-spacing:-2px}
+.verdict{font-family:Fraunces,serif;font-size:24px;line-height:1.25;letter-spacing:-.3px}
+.verdict b{color:var(--lime);font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--panel2);border-radius:14px;padding:14px;border:1px solid var(--line)}
+.kpi .v{font-family:Fraunces,serif;font-size:32px;letter-spacing:-1px}
+.kpi .l{font:600 10px 'JetBrains Mono',monospace;color:var(--mute);letter-spacing:.12em;text-transform:uppercase}
+.kpi .d{font-size:12px;color:var(--mute);margin-top:2px}
+.add{display:grid;grid-template-columns:1fr auto auto auto auto;gap:8px}
+@media(max-width:760px){.add{grid-template-columns:1fr 1fr}.add input[type=text]{grid-column:1/-1}}
+input,select,textarea{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:11px 13px;font:inherit;outline:none;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--lime)}
+.btn{background:var(--lime);color:#10130a;border:0;border-radius:12px;padding:11px 18px;font:700 14px inherit;font-family:inherit;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.g{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.task{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);margin-bottom:10px;position:relative;overflow:hidden;transition:.2s}
+.task.run{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 0 28px -8px var(--amber)}
+.task.done{opacity:.72}
+.task.done .t{text-decoration:line-through;text-decoration-color:var(--mute)}
+.chk{width:30px;height:30px;border-radius:50%;border:2px solid var(--mute);background:none;cursor:pointer;display:grid;place-items:center;color:transparent;font-size:16px;transition:.2s}
+.chk:hover{border-color:var(--lime);transform:scale(1.1)}
+.done .chk{background:var(--lime);border-color:var(--lime);color:#10130a}
+.t{font-weight:500;font-size:16px}
+.meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--mute);margin-top:4px}
+.pips{display:inline-flex;gap:3px}.pips s{width:7px;height:7px;border-radius:2px;background:var(--line)}.pips s.on{background:var(--lime)}
+.chip{font:600 10px 'JetBrains Mono',monospace;padding:2px 8px;border-radius:99px;border:1px solid var(--line);letter-spacing:.06em;text-transform:uppercase}
+.proof{margin-top:6px;font-size:13px;color:var(--ink);opacity:.85;border-left:2px solid var(--lime);padding-left:10px}
+.proof a{color:var(--cyan)}
+.acts{display:flex;gap:6px}
+.sm{background:none;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:6px 10px;font:600 12px 'JetBrains Mono',monospace;cursor:pointer}
+.sm:hover{border-color:var(--amber)}
+.stamp{position:absolute;right:90px;top:50%;transform:translateY(-50%) rotate(-8deg);font:700 13px 'JetBrains Mono',monospace;letter-spacing:.2em;color:var(--lime);border:2px solid var(--lime);padding:3px 10px;border-radius:6px;opacity:.9;pointer-events:none}
+.pop .stamp{animation:stamp .5s cubic-bezier(.2,2,.4,1)}
+@keyframes stamp{from{transform:translateY(-50%) rotate(-8deg) scale(3);opacity:0}}
+.heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:4px;overflow-x:auto;padding-bottom:4px}
+.heat i{width:18px;height:18px;border-radius:5px;background:var(--panel2);cursor:pointer;border:1px solid transparent;display:block}
+.heat i:hover,.heat i.sel{border-color:var(--ink)}
+.heat i.f{background:transparent;border:0;cursor:default}
+.bars{display:flex;gap:10px;align-items:flex-end;height:150px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;cursor:pointer}
+.bar .col{width:100%;max-width:46px;border-radius:8px 8px 3px 3px;background:linear-gradient(var(--lime),#7fb800);min-height:3px;position:relative}
+.bar .pl{position:absolute;inset:auto 0 100% 0;height:0;border-top:2px dashed var(--mute)}
+.bar span{font:600 10px 'JetBrains Mono',monospace;color:var(--mute)}
+.bar.sel span{color:var(--lime)}
+.cols2{grid-template-columns:1.4fr 1fr}
+@media(max-width:820px){.cols2{grid-template-columns:1fr}}
+.donut{width:130px;height:130px;border-radius:50%;flex:none;position:relative}
+.donut::after{content:"";position:absolute;inset:26px;background:var(--panel);border-radius:50%}
+.leg{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.empty{color:var(--mute);text-align:center;padding:26px 10px;font-style:italic;font-family:Fraunces,serif}
+.banner{background:linear-gradient(90deg,var(--violet),var(--cyan));color:#07060b;padding:10px 16px;border-radius:12px;font-weight:700;margin-bottom:16px;font-size:14px}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--lime);border-radius:var(--r);padding:22px;width:min(440px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+dialog h3{font-family:Fraunces,serif;font-size:22px;margin-bottom:6px}
+dialog p{color:var(--mute);font-size:13px;margin-bottom:12px}
+dialog textarea{width:100%;height:84px;resize:vertical}
+dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--lime);color:#10130a;padding:10px 18px;border-radius:99px;font-weight:700;opacity:0;transition:.3s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+.hide{display:none!important}
+.philo{font-size:13px;color:var(--mute);max-width:70ch}
+.philo b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="logo">Proof<i> of </i>Work</div>
+      <div class="tag" id="sub">daily commitments · measurable output</div>
+    </div>
+    <div class="sp"></div>
+    <div class="tabs" id="tabs">
+      <button data-v="me" class="on">My Day</button>
+      <button data-v="pulse">Captain View</button>
+    </div>
+    <button class="ib" id="share" title="Copy a read-only snapshot link for your manager">🔗 Share</button>
+    <button class="ib" id="cfg">⚙</button>
+  </header>
+
+  <div id="banner" class="banner hide"></div>
+
+  <!-- MY DAY -->
+  <section id="me" class="grid">
+    <div class="card hero">
+      <div class="ring" id="ringBox"></div>
+      <div>
+        <div class="tag" id="dateTag"></div>
+        <div class="verdict" id="verdictMe"></div>
+        <div class="philo" style="margin-top:10px">Plan <b>few, honest</b> commitments. Every finished task needs <b>proof</b>. Slipping a task to tomorrow is counted — hiding it isn't possible.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Commit to something</h2>
+      <form class="add" id="addForm">
+        <input type="text" id="fTitle" placeholder="What will you ship today?" required maxlength="140" autocomplete="off">
+        <select id="fCat"></select>
+        <select id="fPts" title="Effort / impact">
+          <option value="1">⚡ 1 · tiny</option><option value="2">⚡ 2 · small</option><option value="3" selected>⚡ 3 · solid</option><option value="4">⚡ 4 · big</option><option value="5">⚡ 5 · critical</option>
+        </select>
+        <input type="number" id="fEst" min="5" step="5" value="30" title="Estimated minutes" style="width:90px">
+        <button class="btn">Commit</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Today's board <span id="boardCount"></span></h2>
+      <div id="board"></div>
+    </div>
+  </section>
+
+  <!-- CAPTAIN VIEW -->
+  <section id="pulse" class="grid hide">
+    <div class="card hero">
+      <div class="ring" id="ringBox2"></div>
+      <div>
+        <div class="tag" id="dateTag2"></div>
+        <div class="verdict" id="verdictPulse"></div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid cols2">
+      <div class="card"><h2>Last 7 days · output</h2><div class="bars" id="bars"></div></div>
+      <div class="card"><h2>Where the time goes · 30d</h2><div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div class="donut" id="donut"></div><div class="leg" id="leg"></div></div></div>
+    </div>
+    <div class="card"><h2>Consistency · last 17 weeks</h2><div class="heat" id="heat"></div></div>
+    <div class="card"><h2 id="logTitle">Day log</h2><div id="log"></div></div>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <h3>Show the proof 🧾</h3>
+  <p id="dlgT"></p>
+  <textarea id="dlgNote" placeholder="Outcome in one line, or paste a link (PR, doc, sheet, ticket…)"></textarea>
+  <div class="row"><button class="btn g" id="dlgSkip">Skip proof</button><button class="btn" id="dlgOk">Mark shipped</button></div>
+</dialog>
+
+<dialog id="cfgDlg">
+  <h3>Settings</h3>
+  <p>Stored only in this browser.</p>
+  <div style="display:grid;gap:10px">
+    <label class="tag">Your name<input id="sName" style="width:100%;margin-top:4px"></label>
+    <label class="tag">Daily target (points)<input id="sTarget" type="number" min="10" step="5" style="width:100%;margin-top:4px"></label>
+    <label class="tag">Categories (comma separated)<input id="sCats" style="width:100%;margin-top:4px"></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn g" id="theme" type="button">Toggle light/dark</button>
+      <button class="btn g" id="demo" type="button">Load demo data</button>
+      <button class="btn g" id="wipe" type="button">Clear all</button>
+    </div>
+  </div>
+  <div class="row"><button class="btn" id="cfgOk">Save</button></div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const KEY='proofwork.v1';
+const COL=['#c6ff3d','#4de2ff','#ffb23d','#ff5d7a','#9b7bff','#6ee7a8','#f0abfc'];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dk=d=>{d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const addDays=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);return dk(d)};
+const uid=()=>Math.random().toString(36).slice(2,10);
+const TODAY=dk();
+
+let S={name:'',target:60,cats:['Product','Support','Learning','Ops'],theme:'dark',tasks:[]};
+let readonly=false, view='me', selDay=TODAY;
+
+/* ---------- storage ---------- */
+function load(){
+  const h=location.hash;
+  if(h.startsWith('#share=')){
+    try{S=JSON.parse(decodeURIComponent(escape(atob(h.slice(7)))));readonly=true;view='pulse';return}catch(e){}
+  }
+  try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+}
+function save(){if(readonly)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- metrics ---------- */
+const spentOf=t=>(t.spent||0)+(t.t0?(Date.now()-t.t0)/1000:0);
+// points: effort*10, +20% when actual time lands within 125% of the estimate (honest estimating is rewarded)
+function pointsOf(t){
+  if(!t.done)return 0;
+  let p=t.pts*10;
+  if(t.est&&t.spent>0&&t.spent/60<=t.est*1.25)p=Math.round(p*1.2);
+  return p;
+}
+function dayStats(k){
+  const ts=S.tasks.filter(t=>t.date===k);
+  const done=ts.filter(t=>t.done);
+  const score=done.reduce((a,t)=>a+pointsOf(t),0);
+  const focus=ts.reduce((a,t)=>a+(t.spent||0),0)/60;
+  return {k,ts,done:done.length,planned:ts.length,score,focus};
+}
+function streak(){
+  let n=0,k=TODAY;
+  if(!dayStats(k).done)k=addDays(k,-1);
+  while(dayStats(k).done){n++;k=addDays(k,-1)}
+  return n;
+}
+function range(n,end){const a=[];for(let i=n-1;i>=0;i--)a.push(dayStats(addDays(end||TODAY,-i)));return a}
+function agg(n){
+  const r=range(n);
+  const planned=r.reduce((a,d)=>a+d.planned,0),done=r.reduce((a,d)=>a+d.done,0);
+  const score=r.reduce((a,d)=>a+d.score,0),focus=r.reduce((a,d)=>a+d.focus,0);
+  const timed=S.tasks.filter(t=>t.done&&t.est&&t.spent>0&&r.some(d=>d.k===t.date));
+  const acc=timed.length?timed.reduce((a,t)=>a+Math.max(0,1-Math.abs(t.spent/60-t.est)/t.est),0)/timed.length:null;
+  const slips=S.tasks.filter(t=>r.some(d=>d.k===t.date)).reduce((a,t)=>a+(t.slips||0),0);
+  const active=r.filter(d=>d.done).length;
+  return {planned,done,score,focus,acc,slips,active,rate:planned?done/planned:null,n};
+}
+function grade(rate){return rate==null?'–':rate>=.9?'A':rate>=.75?'B':rate>=.5?'C':'D'}
+
+/* ---------- renderers ---------- */
+function ring(id,score){
+  const pct=Math.min(1,score/S.target),R=82,C=2*Math.PI*R,over=score>S.target;
+  $(id).innerHTML=`<svg width="190" height="190"><circle cx="95" cy="95" r="${R}" fill="none" stroke="var(--panel2)" stroke-width="16"/>
+  <circle cx="95" cy="95" r="${R}" fill="none" stroke="${over?'var(--amber)':'var(--lime)'}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" style="transition:stroke-dashoffset .8s;filter:drop-shadow(0 0 8px ${over?'var(--amber)':'var(--lime)'})"/></svg>
+  <div class="c"><div><div class="big">${score}</div><div class="tag">of ${S.target} pts</div></div></div>`;
+}
+function verdict(k){
+  const d=dayStats(k),st=streak();
+  if(!d.planned)return k===TODAY?'Nothing committed yet. <b>An empty day can’t be measured.</b>':'No commitments logged this day.';
+  const pend=d.planned-d.done;
+  let s=`<b>${d.score} pts</b> from <b>${d.done}/${d.planned}</b> commitments`;
+  if(d.focus>=1)s+=` · ${(d.focus/60).toFixed(1)}h focus`;
+  s+=pend>0&&k===TODAY?` — ${pend} still open.`:pend>0?` — ${pend} not delivered.`:'. Clean sweep.';
+  if(k===TODAY&&st>1)s+=` 🔥 ${st}-day streak.`;
+  return s;
+}
+function fmtT(sec){sec=Math.floor(sec);const m=Math.floor(sec/60),s=sec%60;return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}:${String(s).padStart(2,'0')}`}
+function linkify(t){return esc(t).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}
+
+function taskHTML(t,ro){
+  const sp=spentOf(t),run=!!t.t0;
+  return `<div class="task ${t.done?'done':''} ${run?'run':''}" data-id="${t.id}">
+    <button class="chk" ${ro?'disabled':''} data-a="done">✓</button>
+    <div>
+      <div class="t">${esc(t.title)}</div>
+      <div class="meta"><span class="chip">${esc(t.cat)}</span>
+        <span class="pips" title="effort ${t.pts}">${[1,2,3,4,5].map(i=>`<s class="${i<=t.pts?'on':''}"></s>`).join('')}</span>
+        <span>est ${t.est}m</span>${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
+        ${t.slips?`<span style="color:var(--rose)">↪ slipped ×${t.slips}</span>`:''}
+        ${t.done?`<span style="color:var(--lime)">+${pointsOf(t)} pts</span>`:''}</div>
+      ${t.done&&t.proof?`<div class="proof">${linkify(t.proof)}</div>`:''}
+    </div>
+    ${ro?'':`<div class="acts">${t.done?'<button class="sm" data-a="undo">undo</button>':`<button class="sm" data-a="timer">${run?'■ stop':'▶ focus'}</button><button class="sm" data-a="del">✕</button>`}</div>`}
+    ${t.done?'<div class="stamp">SHIPPED</div>':''}
+  </div>`;
+}
+
+function renderMe(){
+  const d=dayStats(TODAY);
+  $('#dateTag').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
+  ring('#ringBox',d.score);
+  $('#verdictMe').innerHTML=verdict(TODAY);
+  // carried-over tasks from earlier days
+  const carried=S.tasks.filter(t=>!t.done&&t.date<TODAY);
+  let h='';
+  if(carried.length)h+=`<div class="tag" style="margin-bottom:8px;color:var(--rose)">Overdue — pull into today (counts as a slip)</div>`+carried.map(t=>`<div class="task" data-id="${t.id}"><span></span><div><div class="t">${esc(t.title)}</div><div class="meta"><span class="chip">${esc(t.cat)}</span><span>from ${t.date}</span></div></div><div class="acts"><button class="sm" data-a="pull">↪ pull</button><button class="sm" data-a="del">✕</button></div></div>`).join('');
+  const ts=d.ts.slice().sort((a,b)=>a.done-b.done||a.created-b.created);
+  h+=ts.length?ts.map(t=>taskHTML(t,false)).join(''):'<div class="empty">Blank page. Commit to something above.</div>';
+  $('#board').innerHTML=h;
+  $('#boardCount').textContent=d.planned?`· ${d.done}/${d.planned}`:'';
+}
+
+function renderPulse(){
+  const d=dayStats(TODAY);
+  $('#dateTag2').textContent=(S.name?S.name+' · ':'')+'TODAY, '+new Date().toLocaleDateString(undefined,{day:'numeric',month:'short'}).toUpperCase();
+  ring('#ringBox2',d.score);
+  $('#verdictPulse').innerHTML=verdict(TODAY);
+  const a=agg(7),m=agg(30),st=streak();
+  const kp=(l,v,dd)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${dd}</div></div>`;
+  $('#kpis').innerHTML=
+    kp('Output · 7d',a.score,`avg ${Math.round(a.score/7)}/day · target ${S.target}`)+
+    kp('Delivery rate',a.rate==null?'–':Math.round(a.rate*100)+'%',`${a.done} of ${a.planned} commitments · grade ${grade(a.rate)}`)+
+    kp('Estimate honesty',a.acc==null?'–':Math.round(a.acc*100)+'%','how close time was to plan')+
+    kp('Focus · 7d',(a.focus/60).toFixed(1)+'h','tracked with the timer')+
+    kp('Slips · 7d',a.slips,a.slips?'tasks pushed to a later day':'nothing pushed back')+
+    kp('Streak',st+(st===1?' day':' days'),`${m.active}/30 active days`);
+  // bars
+  const r=range(7),mx=Math.max(S.target,...r.map(x=>x.score),1);
+  $('#bars').innerHTML=r.map(x=>{
+    const lbl=new Date(x.k+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'}).slice(0,2).toUpperCase();
+    return `<div class="bar ${x.k===selDay?'sel':''}" data-k="${x.k}" title="${x.k}: ${x.score} pts"><div class="col" style="height:${x.score/mx*100}%"></div><span>${lbl}</span></div>`}).join('');
+  // donut
+  const cats={};
+  range(30).forEach(x=>x.ts.filter(t=>t.done).forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+pointsOf(t)}));
+  const ent=Object.entries(cats).sort((a,b)=>b[1]-a[1]),tot=ent.reduce((s,e)=>s+e[1],0);
+  if(tot){let acc=0;const seg=ent.map((e,i)=>{const s=acc;acc+=e[1]/tot*100;return `${COL[i%COL.length]} ${s}% ${acc}%`});
+    $('#donut').style.background=`conic-gradient(${seg.join(',')})`;
+    $('#leg').innerHTML=ent.map((e,i)=>`<div><i style="background:${COL[i%COL.length]}"></i>${esc(e[0])} · ${Math.round(e[1]/tot*100)}%</div>`).join('');
+  }else{$('#donut').style.background='var(--panel2)';$('#leg').innerHTML='<div class="empty" style="padding:0">no shipped work yet</div>'}
+  // heatmap
+  const weeks=17,dow=(new Date().getDay()+6)%7; // Mon=0
+  const start=addDays(TODAY,-(weeks*7-1-(6-dow)));
+  let cells='',mxs=Math.max(S.target,...S.tasks.map(t=>0),1);
+  const all=[];for(let i=0;i<weeks*7;i++){const k=addDays(start,i);all.push(k)}
+  const top=Math.max(S.target,...all.map(k=>dayStats(k).score));
+  all.forEach(k=>{
+    if(k>TODAY){cells+='<i class="f"></i>';return}
+    const x=dayStats(k);let bg='';
+    if(x.planned&&!x.done)bg='background:rgba(255,93,122,.35)';
+    else if(x.score){const p=Math.min(1,x.score/top);bg=`background:color-mix(in srgb,var(--lime) ${25+p*75}%,var(--panel2));${p>.7?'box-shadow:0 0 10px -2px var(--lime)':''}`}
+    cells+=`<i class="${k===selDay?'sel':''}" data-k="${k}" style="${bg}" title="${k} · ${x.score} pts · ${x.done}/${x.planned}"></i>`;
+  });
+  $('#heat').innerHTML=cells;
+  // log
+  const x=dayStats(selDay);
+  $('#logTitle').textContent=`Day log · ${new Date(selDay+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})} · ${x.score} pts`;
+  $('#log').innerHTML=x.ts.length?x.ts.slice().sort((a,b)=>b.done-a.done||a.created-b.created).map(t=>taskHTML(t,true)).join(''):'<div class="empty">Nothing logged on this day — that is a signal too.</div>';
+}
+
+function render(){
+  document.documentElement.dataset.theme=S.theme;
+  $('#me').classList.toggle('hide',view!=='me');
+  $('#pulse').classList.toggle('hide',view!=='pulse');
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  const cs=$('#fCat');cs.innerHTML=S.cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  if(readonly){
+    $('#tabs').classList.add('hide');$('#share').classList.add('hide');$('#cfg').classList.add('hide');
+    $('#banner').classList.remove('hide');
+    $('#banner').textContent=`👀 Read-only snapshot${S.name?' of '+S.name:''}${S.snap?' · taken '+S.snap:''}. Everything you see is computed from logged tasks.`;
+    $('#me').classList.add('hide');$('#pulse').classList.remove('hide');
+  }
+  view==='me'&&!readonly?renderMe():renderPulse();
+}
+
+/* ---------- actions ---------- */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)}
+const find=id=>S.tasks.find(t=>t.id===id);
+function stopTimer(t){if(t.t0){t.spent=(t.spent||0)+(Date.now()-t.t0)/1000;t.t0=null}}
+let pending=null;
+
+$('#addForm').onsubmit=e=>{
+  e.preventDefault();
+  S.tasks.push({id:uid(),title:$('#fTitle').value.trim(),cat:$('#fCat').value,pts:+$('#fPts').value,est:+$('#fEst').value||30,date:TODAY,created:Date.now(),done:false,spent:0,slips:0});
+  $('#fTitle').value='';save();render();
+};
+$('#board').onclick=e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const el=b.closest('.task'),t=find(el.dataset.id),a=b.dataset.a;
+  if(a==='done'){
+    if(t.done)return;
+    pending=t;stopTimer(t);$('#dlgT').textContent=t.title;$('#dlgNote').value='';$('#dlg').showModal();
+  }
+  if(a==='undo'){t.done=false;t.proof='';save();render()}
+  if(a==='del'){if(confirm('Remove this task?')){S.tasks=S.tasks.filter(x=>x!==t);save();render()}}
+  if(a==='pull'){t.date=TODAY;t.slips=(t.slips||0)+1;save();render();toast('Pulled in · logged as a slip')}
+  if(a==='timer'){
+    if(t.t0){stopTimer(t)}else{S.tasks.forEach(stopTimer);t.t0=Date.now()}
+    save();render();
+  }
+};
+function finish(note){
+  if(!pending)return;pending.done=true;pending.proof=note;pending.doneAt=Date.now();
+  const id=pending.id;pending=null;save();render();$('#dlg').close();
+  const el=document.querySelector(`[data-id="${id}"]`);el&&el.classList.add('pop');toast('Shipped ✓');
+}
+$('#dlgOk').onclick=()=>finish($('#dlgNote').value.trim());
+$('#dlgSkip').onclick=()=>finish('');
+$('#dlg').addEventListener('cancel',()=>{pending=null});
+
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){view=b.dataset.v;render()}};
+function pick(e){const k=e.target.closest('[data-k]');if(k){selDay=k.dataset.k;renderPulse()}}
+$('#heat').onclick=pick;$('#bars').onclick=pick;
+
+$('#share').onclick=()=>{
+  const cut=addDays(TODAY,-120);
+  const snap=Object.assign({},S,{tasks:S.tasks.filter(t=>t.date>=cut).map(t=>{const c=Object.assign({},t);if(c.t0){c.spent=spentOf(t);c.t0=null}return c}),snap:new Date().toLocaleString()});
+  const url=location.href.split('#')[0]+'#share='+btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
+  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Snapshot link copied'),()=>prompt('Copy this link:',url));
+};
+$('#cfg').onclick=()=>{$('#sName').value=S.name;$('#sTarget').value=S.target;$('#sCats').value=S.cats.join(', ');$('#cfgDlg').showModal()};
+$('#cfgOk').onclick=()=>{S.name=$('#sName').value.trim();S.target=+$('#sTarget').value||60;const c=$('#sCats').value.split(',').map(s=>s.trim()).filter(Boolean);if(c.length)S.cats=c;save();$('#cfgDlg').close();render()};
+$('#theme').onclick=()=>{S.theme=S.theme==='dark'?'light':'dark';save();render()};
+$('#wipe').onclick=()=>{if(confirm('Delete ALL tasks in this browser?')){S.tasks=[];save();$('#cfgDlg').close();render()}};
+$('#demo').onclick=()=>{
+  if(!confirm('Replace current tasks with 90 days of demo data?'))return;
+  const T=['Fix onboarding bug','Reply to support backlog','Write release notes','Review 3 PRs','Plan sprint','Customer call prep','Refactor auth module','Update docs','Learn SQL window functions','Automate weekly report','Triage tickets','Design review'];
+  let r=7;const rnd=()=>(r=(r*9301+49297)%233280)/233280;S.tasks=[];
+  for(let i=90;i>=0;i--){
+    const k=addDays(TODAY,-i),wd=new Date(k+'T12:00:00').getDay();if(wd===0||(wd===6&&rnd()<.7))continue;if(rnd()<.08)continue;
+    const n=2+Math.floor(rnd()*4);
+    for(let j=0;j<n;j++){
+      const est=[15,30,45,60,90][Math.floor(rnd()*5)],done=i>0?rnd()<.8:rnd()<.5;
+      S.tasks.push({id:uid(),title:T[Math.floor(rnd()*T.length)],cat:S.cats[Math.floor(rnd()*S.cats.length)],pts:1+Math.floor(rnd()*5),est,date:k,created:Date.now()-i*864e5,done,spent:done?est*60*(.7+rnd()*.8):0,slips:rnd()<.12?1:0,proof:done&&rnd()<.6?'Merged & verified — https://example.com/pr/'+Math.floor(rnd()*900):''});
+    }
+  }
+  save();$('#cfgDlg').close();render();toast('Demo data loaded');
+};
+
+/* live timer tick */
+setInterval(()=>{
+  if(readonly)return;
+  const run=S.tasks.find(t=>t.t0);if(!run)return;
+  const el=document.querySelector(`[data-id="${run.id}"] .tm`);if(el)el.textContent=fmtT(spentOf(run));
+},1000);
+
+load();render();
+</script>
+</body>
+</html>
