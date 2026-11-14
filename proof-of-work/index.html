@@ -244,7 +244,9 @@ function save(){if(readonly)return;try{localStorage.setItem(KEY,JSON.stringify(S
 
 /* ---------- measurement: value = what changed. Never a count of tasks. ---------- */
 const valueOf=t=>t.done?(t.tier||0):0;
-function bets(k){return S.tasks.filter(t=>t.date===k).sort((a,b)=>a.created-b.created).slice(0,MAXBETS)}
+let LOG=[];
+const allTasks=()=>S.tasks.concat(LOG.filter(l=>!S.tasks.some(t=>t.id===l.id)));
+function bets(k){return allTasks().filter(t=>t.date===k).sort((a,b)=>a.created-b.created).slice(0,MAXBETS)}
 function dayStats(k){
   const ts=bets(k),value=ts.reduce((a,t)=>a+valueOf(t),0);
   const top=ts.filter(t=>t.done).sort((a,b)=>b.tier-a.tier)[0];
@@ -255,7 +257,7 @@ function range(n){const a=[];for(let i=n-1;i>=0;i--)a.push(dayStats(addDays(TODA
 function agg(n){
   const r=range(n),all=r.flatMap(d=>d.ts),closed=all.filter(t=>t.done);
   const value=r.reduce((a,d)=>a+d.value,0),moved=closed.filter(t=>t.tier>=1);
-  const hon=closed.length?closed.reduce((a,t)=>a+(1-Math.abs((t.exp||2)-t.tier)/3),0)/closed.length:null;
+  const fc=closed.filter(t=>t.exp);const hon=fc.length?fc.reduce((a,t)=>a+(1-Math.abs(t.exp-t.tier)/3),0)/fc.length:null;
   return {value,needle:r.filter(d=>d.ts.some(t=>t.done&&t.tier>=2)).length,
     movedRate:all.length?moved.length/all.length:null,hon,
     results:closed.reduce((a,t)=>a+(+t.impact||0),0),
@@ -289,11 +291,11 @@ function betHTML(t,ro){
     <button class="chk" ${ro||t.done?'disabled':''} data-a="close" title="Close this bet">✓</button>
     <div><div class="t">${esc(t.title)}</div>
       <div class="meta"><span class="chip">${esc(t.cat)}</span>${t.partner?`<span class="chip" style="color:var(--cyan);border-color:var(--cyan)">@ ${esc(t.partner)}</span>`:''}
-        <span>forecast: ${TIERNAME[t.exp||2].toLowerCase()}</span>${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
+        ${t.pub?'<span class="chip" style="color:var(--violet);border-color:var(--violet)">from sheet</span>':`<span>forecast: ${TIERNAME[t.exp||2].toLowerCase()}</span>`}${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
         ${t.slips?`<span style="color:var(--rose)">↪ slipped ×${t.slips}</span>`:''}
         ${t.done?`<span class="tier t${t.tier}">${t.tier} · ${TIERNAME[t.tier]}</span>`:''}${t.impact?`<span style="color:var(--amber)">★ result ${t.impact}</span>`:''}</div>
       ${t.done&&t.proof?`<div class="proof">${linkify(t.proof)}</div>`:''}</div>
-    ${ro?'':`<div class="acts">${t.done?'':`<button class="sm" data-a="timer">${run?'■ stop':'▶ focus'}</button><button class="sm" data-a="del" title="Drop this bet">✕</button>`}</div>`}
+    ${ro||t.pub?'':`<div class="acts">${t.done?'':`<button class="sm" data-a="timer">${run?'■ stop':'▶ focus'}</button><button class="sm" data-a="del" title="Drop this bet">✕</button>`}</div>`}
   </div>`;
 }
 function renderMe(){
@@ -373,13 +375,14 @@ function renderPipeline(){
   const eng=[...(pl.partners||[]).filter(x=>/replied|discussion|live/i.test(x.stage)).map(x=>({name:x.name,stage:x.stage,last:x.last})),...(o.engaged||[])].slice(0,10);
   $('#pipeEng').innerHTML=eng.length?eng.map(x=>`<div class="pb"><b>${esc(x.name)}</b><span>${esc(x.stage||'')}</span><span style="color:var(--mute)">${esc(x.last||'')}</span></div>`).join(''):'<div class="empty">Nothing yet.</div>';
 }
+fetch('log.json?'+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.bets){LOG=j.bets;render()}},()=>{});
 fetch('pipeline.json?'+Date.now()).then(r=>r.ok?r.json():null).then(j=>{P=j;renderPipeline()},()=>{});
 
 function render(){
   document.documentElement.dataset.theme=S.theme;
   $('#me').classList.toggle('hide',view!=='me');$('#pulse').classList.toggle('hide',view!=='pulse');
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
-  $('#plist').innerHTML=[...new Set([...S.tasks.map(t=>t.partner),...((P&&P.pipeline&&P.pipeline.partners)||[]).map(p=>p.name)].filter(Boolean))].map(p=>`<option value="${esc(p)}">`).join('');
+  $('#plist').innerHTML=[...new Set([...allTasks().map(t=>t.partner),...((P&&P.pipeline&&P.pipeline.partners)||[]).map(p=>p.name)].filter(Boolean))].map(p=>`<option value="${esc(p)}">`).join('');
   $('#fCat').innerHTML=S.cats.map(c=>`<option>${esc(c)}</option>`).join('');
   if(readonly){['#tabs','#share','#cfg','#digest'].forEach(i=>$(i).classList.add('hide'));
     $('#banner').classList.remove('hide');$('#banner').textContent=`👀 Read-only snapshot${S.name?' of '+S.name:''}${S.snap?' · taken '+S.snap:''}. Every number is computed from logged bets and their proof.`;
