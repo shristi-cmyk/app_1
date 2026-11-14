@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Proof of Work</title>
+<title>Stride</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -92,6 +92,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--lime)}
 .leg{display:flex;flex-direction:column;gap:6px;font-size:13px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
 .fun{display:grid;grid-template-columns:110px 1fr 28px;gap:10px;align-items:center;margin-bottom:9px;font-size:13px}.fun div.b{height:20px;border-radius:6px;background:linear-gradient(90deg,var(--lime),var(--cyan));min-width:3px}.pb{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.pb:last-child{border:0}.pb b{font-weight:600}
+.tiers{display:grid;gap:8px;margin:6px 0 10px}.tiers label{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--panel2)}.tiers label:has(input:checked){border-color:var(--lime);box-shadow:0 0 0 1px var(--lime)}.tiers b{font-weight:600}.tiers small{display:block;color:var(--mute)}.err{color:var(--rose);font-size:13px;min-height:18px;margin-top:6px}.tier{font:700 11px "JetBrains Mono",monospace;padding:2px 8px;border-radius:99px;background:var(--lime);color:#10130a}.tier.t0{background:var(--line);color:var(--mute)}.tier.t2{background:var(--cyan)}.tier.t3{background:var(--amber)}.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.rules div{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:13px;color:var(--mute)}.rules b{display:block;color:var(--ink);font-family:Fraunces,serif;font-size:17px;margin-bottom:4px}footer{margin-top:28px;text-align:center;color:var(--mute);font-size:12px}
 .empty{color:var(--mute);text-align:center;padding:26px 10px;font-style:italic;font-family:Fraunces,serif}
 .banner{background:linear-gradient(90deg,var(--violet),var(--cyan));color:#07060b;padding:10px 16px;border-radius:12px;font-weight:700;margin-bottom:16px;font-size:14px}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--lime);border-radius:var(--r);padding:22px;width:min(440px,92vw)}
@@ -111,8 +112,8 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 <div class="wrap">
   <header>
     <div>
-      <div class="logo">Proof<i> of </i>Work</div>
-      <div class="tag" id="sub">product &amp; growth partnerships · measurable output</div>
+      <div class="logo">Str<i>i</i>de</div>
+      <div class="tag" id="sub">product &amp; growth partnerships · value, not volume</div>
     </div>
     <div class="sp"></div>
     <div class="tabs" id="tabs">
@@ -123,41 +124,38 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
     <button class="ib" id="share" title="Copy a read-only snapshot link for your manager">🔗 Share</button>
     <button class="ib" id="cfg">⚙</button>
   </header>
-
   <div id="banner" class="banner hide"></div>
 
-  <!-- MY DAY -->
   <section id="me" class="grid">
     <div class="card hero">
       <div class="ring" id="ringBox"></div>
       <div>
         <div class="tag" id="dateTag"></div>
         <div class="verdict" id="verdictMe"></div>
-        <div class="philo" style="margin-top:10px">Plan <b>few, honest</b> commitments. Every finished task needs <b>proof</b>. Slipping a task to tomorrow is counted — hiding it isn't possible.</div>
+        <div class="philo" style="margin-top:10px">Max <b>three bets</b> a day. A bet scores by <b>what actually changed</b>, never by how busy it kept you. Doing more tasks cannot raise this number.</div>
       </div>
     </div>
 
     <div class="card">
-      <h2>Commit to something</h2>
+      <h2>Place a bet <span id="slots"></span></h2>
       <form class="add" id="addForm">
-        <input type="text" id="fTitle" placeholder="What will you ship today?" required maxlength="140" autocomplete="off">
+        <input type="text" id="fTitle" placeholder="Outcome I'm after (e.g. Hackerrank integration call booked)" required maxlength="140" autocomplete="off">
         <input type="text" id="fPartner" placeholder="Partner" maxlength="40" list="plist" style="width:130px"><datalist id="plist"></datalist>
         <select id="fCat"></select>
-        <select id="fPts" title="Effort / impact">
-          <option value="1">⚡ 1 · tiny</option><option value="2">⚡ 2 · small</option><option value="3" selected>⚡ 3 · solid</option><option value="4">⚡ 4 · big</option><option value="5">⚡ 5 · critical</option>
+        <select id="fExp" title="If this works, how much will it move things? (forecast)">
+          <option value="1">Forecast: moves forward</option><option value="2" selected>Forecast: milestone</option><option value="3">Forecast: real result</option>
         </select>
-        <input type="number" id="fEst" min="5" step="5" value="30" title="Estimated minutes" style="width:90px">
-        <button class="btn">Commit</button>
+        <button class="btn" id="addBtn">Bet</button>
       </form>
+      <div class="err" id="capMsg"></div>
     </div>
 
     <div class="card">
-      <h2>Today's board <span id="boardCount"></span></h2>
+      <h2>Today's bets <span id="boardCount"></span></h2>
       <div id="board"></div>
     </div>
   </section>
 
-  <!-- CAPTAIN VIEW -->
   <section id="pulse" class="grid hide">
     <div class="card hero">
       <div class="ring" id="ringBox2"></div>
@@ -168,24 +166,43 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="grid cols2">
-      <div class="card"><h2>Last 7 days · output</h2><div class="bars" id="bars"></div></div>
-      <div class="card"><h2>Where the time goes · 30d</h2><div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div class="donut" id="donut"></div><div class="leg" id="leg"></div></div></div>
+      <div class="card"><h2>Last 7 days · value</h2><div class="bars" id="bars"></div></div>
+      <div class="card"><h2>Where the value comes from · 30d</h2><div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div class="donut" id="donut"></div><div class="leg" id="leg"></div></div></div>
     </div>
-    <div class="grid cols2"><div class="card"><h2>Partner funnel · 30d <span style="text-transform:none;letter-spacing:0">(unique partners reached)</span></h2><div id="funnel"></div></div><div class="card"><h2>Partner board · 30d</h2><div id="pboard"></div></div></div>
+    <div class="grid cols2">
+      <div class="card"><h2>Partner funnel · 30d <span style="text-transform:none;letter-spacing:0">(unique partners moved)</span></h2><div id="funnel"></div></div>
+      <div class="card"><h2>Partner board · by value · 30d</h2><div id="pboard"></div></div>
+    </div>
     <div class="card hide" id="pipeCard"><h2>Live pipeline <span id="pipeAge" style="text-transform:none;letter-spacing:0"></span></h2>
       <div class="kpis" id="pipeKpis" style="margin-bottom:16px"></div>
       <div class="grid cols2"><div><h2>Partners by stage</h2><div id="pipeStages"></div></div><div><h2>Engaged &amp; replied</h2><div id="pipeEng"></div></div></div></div>
-    <div class="card"><h2>Consistency · last 17 weeks</h2><div class="heat" id="heat"></div></div>
+    <div class="card"><h2>Consistency · last 17 weeks (shade = value)</h2><div class="heat" id="heat"></div></div>
     <div class="card"><h2 id="logTitle">Day log</h2><div id="log"></div></div>
+    <div class="card"><h2>How to read this</h2>
+      <div class="rules">
+        <div><b>No volume credit</b>Three bets a day is a hard cap. Ten tasks and one task earn the same if the same thing changed.</div>
+        <div><b>Value = what changed</b>0 nothing · 1 moved forward · 2 milestone (proof) · 3 real result (number + proof).</div>
+        <div><b>Forecast honesty</b>Every bet is forecast first. Over-promising and under-delivering shows up here.</div>
+        <div><b>Proof, not claims</b>Milestones and results need a link or note. Click any day above to audit it.</div>
+      </div>
+    </div>
   </section>
+  <footer>A viaSocket challenge entry. It is a challenge, not an assignment, and nothing here counts toward regular work.</footer>
 </div>
 
 <dialog id="dlg">
-  <h3>Show the proof 🧾</h3>
+  <h3>What actually changed?</h3>
   <p id="dlgT"></p>
-  <input type="number" id="dlgImpact" min="0" placeholder="Result: leads / signups / meetings booked (optional)" style="width:100%;margin-bottom:8px">
-  <textarea id="dlgNote" placeholder="Outcome in one line, or paste a link (PR, doc, sheet, ticket…)"></textarea>
-  <div class="row"><button class="btn g" id="dlgSkip">Skip proof</button><button class="btn" id="dlgOk">Mark shipped</button></div>
+  <div class="tiers" id="tiers">
+    <label><input type="radio" name="tier" value="0"><div><b>Nothing moved</b><small>Honest zero. It protects your forecast score.</small></div></label>
+    <label><input type="radio" name="tier" value="1"><div><b>Moved forward</b><small>A reply, an intro, a follow-up, a deck sent.</small></div></label>
+    <label><input type="radio" name="tier" value="2"><div><b>Milestone</b><small>Call held, integration / listing live, agreement sent. Proof required.</small></div></label>
+    <label><input type="radio" name="tier" value="3"><div><b>Real result</b><small>Leads, signups or revenue came from it. Number + proof required.</small></div></label>
+  </div>
+  <input type="number" id="dlgImpact" min="0" placeholder="Result number (leads / signups / meetings)" class="hide" style="width:100%;margin-bottom:8px">
+  <textarea id="dlgNote" placeholder="Proof: a link (PR, doc, sheet, thread) or one line on what happened"></textarea>
+  <div class="err" id="dlgErr"></div>
+  <div class="row"><button class="btn g" id="dlgCancel">Cancel</button><button class="btn" id="dlgOk">Close bet</button></div>
 </dialog>
 
 <dialog id="cfgDlg">
@@ -193,9 +210,9 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
   <p>Stored only in this browser.</p>
   <div style="display:grid;gap:10px">
     <label class="tag">Your name<input id="sName" style="width:100%;margin-top:4px"></label>
-    <label class="tag">Daily target (points)<input id="sTarget" type="number" min="10" step="5" style="width:100%;margin-top:4px"></label>
+    <label class="tag">Daily value target (max 9)<input id="sTarget" type="number" min="1" max="9" step="1" style="width:100%;margin-top:4px"></label>
     <label class="tag">viaSocket webhook URL (optional)<input id="sHook" placeholder="https://flow.sokt.io/func/…" style="width:100%;margin-top:4px"></label>
-    <label class="tag">Categories (comma separated)<input id="sCats" style="width:100%;margin-top:4px"></label>
+    <label class="tag">Motions (comma separated, in funnel order)<input id="sCats" style="width:100%;margin-top:4px"></label>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn g" id="theme" type="button">Toggle light/dark</button>
       <button class="btn g" id="demo" type="button">Load demo data</button>
@@ -209,202 +226,147 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 <script>
 'use strict';
 const $=s=>document.querySelector(s);
-const KEY='proofwork.v1';
+const KEY='stride.v1', MAXBETS=3, TIERNAME=['Nothing moved','Moved forward','Milestone','Real result'];
 const COL=['#c6ff3d','#4de2ff','#ffb23d','#ff5d7a','#9b7bff','#6ee7a8','#f0abfc'];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dk=d=>{d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const addDays=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);return dk(d)};
 const uid=()=>Math.random().toString(36).slice(2,10);
 const TODAY=dk();
+let S={name:'',target:5,cats:['Outreach','Partner call','Integration','Co-marketing','Enablement','Analysis'],hook:'',theme:'dark',tasks:[]};
+let readonly=false,view='me',selDay=TODAY;
 
-let S={name:'',target:60,cats:['Outreach','Partner call','Integration','Co-marketing','Enablement','Analysis'],hook:'',theme:'dark',tasks:[]};
-let readonly=false, view='me', selDay=TODAY;
-
-/* ---------- storage ---------- */
 function load(){
-  const h=location.hash;
-  if(h.startsWith('#share=')){
-    try{S=JSON.parse(decodeURIComponent(escape(atob(h.slice(7)))));readonly=true;view='pulse';return}catch(e){}
-  }
+  if(location.hash.startsWith('#share=')){try{S=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(7)))));readonly=true;view='pulse';return}catch(e){}}
   try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
 }
 function save(){if(readonly)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
-/* ---------- metrics ---------- */
-const spentOf=t=>(t.spent||0)+(t.t0?(Date.now()-t.t0)/1000:0);
-// points: effort*10, +20% when actual time lands within 125% of the estimate (honest estimating is rewarded)
-function pointsOf(t){
-  if(!t.done)return 0;
-  let p=t.pts*10;
-  if(t.est&&t.spent>0&&t.spent/60<=t.est*1.25)p=Math.round(p*1.2);
-  return p;
-}
+/* ---------- measurement: value = what changed. Never a count of tasks. ---------- */
+const valueOf=t=>t.done?(t.tier||0):0;
+function bets(k){return S.tasks.filter(t=>t.date===k).sort((a,b)=>a.created-b.created).slice(0,MAXBETS)}
 function dayStats(k){
-  const ts=S.tasks.filter(t=>t.date===k);
-  const done=ts.filter(t=>t.done);
-  const score=done.reduce((a,t)=>a+pointsOf(t),0);
-  const focus=ts.reduce((a,t)=>a+(t.spent||0),0)/60;
-  return {k,ts,done:done.length,planned:ts.length,score,focus};
+  const ts=bets(k),value=ts.reduce((a,t)=>a+valueOf(t),0);
+  const top=ts.filter(t=>t.done).sort((a,b)=>b.tier-a.tier)[0];
+  return {k,ts,value,planned:ts.length,open:ts.filter(t=>!t.done).length,top,focus:ts.reduce((a,t)=>a+(t.spent||0),0)/60};
 }
-function streak(){
-  let n=0,k=TODAY;
-  if(!dayStats(k).done)k=addDays(k,-1);
-  while(dayStats(k).done){n++;k=addDays(k,-1)}
-  return n;
-}
-function range(n,end){const a=[];for(let i=n-1;i>=0;i--)a.push(dayStats(addDays(end||TODAY,-i)));return a}
+function streak(){let n=0,k=TODAY;if(!dayStats(k).value)k=addDays(k,-1);while(dayStats(k).value){n++;k=addDays(k,-1)}return n}
+function range(n){const a=[];for(let i=n-1;i>=0;i--)a.push(dayStats(addDays(TODAY,-i)));return a}
 function agg(n){
-  const r=range(n);
-  const planned=r.reduce((a,d)=>a+d.planned,0),done=r.reduce((a,d)=>a+d.done,0);
-  const score=r.reduce((a,d)=>a+d.score,0),focus=r.reduce((a,d)=>a+d.focus,0);
-  const timed=S.tasks.filter(t=>t.done&&t.est&&t.spent>0&&r.some(d=>d.k===t.date));
-  const acc=timed.length?timed.reduce((a,t)=>a+Math.max(0,1-Math.abs(t.spent/60-t.est)/t.est),0)/timed.length:null;
-  const slips=S.tasks.filter(t=>r.some(d=>d.k===t.date)).reduce((a,t)=>a+(t.slips||0),0);
-  const active=r.filter(d=>d.done).length;
-  const inR=S.tasks.filter(t=>t.done&&r.some(d=>d.k===t.date));
-  const impact=inR.reduce((a,t)=>a+(+t.impact||0),0),partners=new Set(inR.filter(t=>t.partner).map(t=>t.partner.toLowerCase())).size;
-  return {planned,done,score,focus,acc,slips,active,impact,partners,rate:planned?done/planned:null,n};
+  const r=range(n),all=r.flatMap(d=>d.ts),closed=all.filter(t=>t.done);
+  const value=r.reduce((a,d)=>a+d.value,0),moved=closed.filter(t=>t.tier>=1);
+  const hon=closed.length?closed.reduce((a,t)=>a+(1-Math.abs((t.exp||2)-t.tier)/3),0)/closed.length:null;
+  return {value,needle:r.filter(d=>d.ts.some(t=>t.done&&t.tier>=2)).length,
+    movedRate:all.length?moved.length/all.length:null,hon,
+    results:closed.reduce((a,t)=>a+(+t.impact||0),0),
+    partners:new Set(moved.filter(t=>t.partner).map(t=>t.partner.toLowerCase())).size,
+    focus:r.reduce((a,d)=>a+d.focus,0),slips:all.reduce((a,t)=>a+(t.slips||0),0),
+    ratio:value/(S.target*Math.min(n,5))};
 }
-function grade(rate){return rate==null?'–':rate>=.9?'A':rate>=.75?'B':rate>=.5?'C':'D'}
+const grade=x=>x>=1?'A':x>=.75?'B':x>=.5?'C':'D';
 
-/* ---------- renderers ---------- */
-function ring(id,score){
-  const pct=Math.min(1,score/S.target),R=82,C=2*Math.PI*R,over=score>S.target;
-  $(id).innerHTML=`<svg width="190" height="190"><circle cx="95" cy="95" r="${R}" fill="none" stroke="var(--panel2)" stroke-width="16"/>
-  <circle cx="95" cy="95" r="${R}" fill="none" stroke="${over?'var(--amber)':'var(--lime)'}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" style="transition:stroke-dashoffset .8s;filter:drop-shadow(0 0 8px ${over?'var(--amber)':'var(--lime)'})"/></svg>
-  <div class="c"><div><div class="big">${score}</div><div class="tag">of ${S.target} pts</div></div></div>`;
+/* ---------- views ---------- */
+function ring(id,v){
+  const pct=Math.min(1,v/S.target),R=82,C=2*Math.PI*R,over=v>S.target;
+  $(id).innerHTML=`<svg width="190" height="190"><circle cx="95" cy="95" r="${R}" fill="none" stroke="var(--panel2)" stroke-width="16"/><circle cx="95" cy="95" r="${R}" fill="none" stroke="${over?'var(--amber)':'var(--lime)'}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" style="transition:stroke-dashoffset .8s;filter:drop-shadow(0 0 8px ${over?'var(--amber)':'var(--lime)'})"/></svg><div class="c"><div><div class="big">${v}</div><div class="tag">target ${S.target}/9</div></div></div>`;
 }
 function verdict(k){
-  const d=dayStats(k),st=streak();
-  if(!d.planned)return k===TODAY?'Nothing committed yet. <b>An empty day can’t be measured.</b>':'No commitments logged this day.';
-  const pend=d.planned-d.done;
-  let s=`<b>${d.score} pts</b> from <b>${d.done}/${d.planned}</b> commitments`;
-  if(d.focus>=1)s+=` · ${(d.focus/60).toFixed(1)}h focus`;
-  s+=pend>0&&k===TODAY?` — ${pend} still open.`:pend>0?` — ${pend} not delivered.`:'. Clean sweep.';
-  if(k===TODAY&&st>1)s+=` 🔥 ${st}-day streak.`;
-  return s;
+  const d=dayStats(k);
+  if(!d.planned)return k===TODAY?'No bets placed. <b>Pick the one thing that would move partnerships today.</b>':'No bets on this day.';
+  let s=`<b>${d.value} value</b>`;
+  s+=d.top?` · biggest move: <b>${esc(d.top.title)}</b> (${TIERNAME[d.top.tier].toLowerCase()})`:' · nothing closed yet';
+  if(d.open&&k===TODAY)s+=` · ${d.open} still open`;
+  if(k===TODAY&&streak()>1)s+=` 🔥 ${streak()}-day streak`;
+  return s+'.';
 }
-function fmtT(sec){sec=Math.floor(sec);const m=Math.floor(sec/60),s=sec%60;return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}:${String(s).padStart(2,'0')}`}
-function linkify(t){return esc(t).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}
+const fmtT=sec=>{sec=Math.floor(sec);const m=Math.floor(sec/60);return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}:${String(sec%60).padStart(2,'0')}`};
+const spentOf=t=>(t.spent||0)+(t.t0?(Date.now()-t.t0)/1000:0);
+const linkify=t=>esc(t).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
 
-function taskHTML(t,ro){
+function betHTML(t,ro){
   const sp=spentOf(t),run=!!t.t0;
   return `<div class="task ${t.done?'done':''} ${run?'run':''}" data-id="${t.id}">
-    <button class="chk" ${ro?'disabled':''} data-a="done">✓</button>
-    <div>
-      <div class="t">${esc(t.title)}</div>
+    <button class="chk" ${ro||t.done?'disabled':''} data-a="close" title="Close this bet">✓</button>
+    <div><div class="t">${esc(t.title)}</div>
       <div class="meta"><span class="chip">${esc(t.cat)}</span>${t.partner?`<span class="chip" style="color:var(--cyan);border-color:var(--cyan)">@ ${esc(t.partner)}</span>`:''}
-        <span class="pips" title="effort ${t.pts}">${[1,2,3,4,5].map(i=>`<s class="${i<=t.pts?'on':''}"></s>`).join('')}</span>
-        <span>est ${t.est}m</span>${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
+        <span>forecast: ${TIERNAME[t.exp||2].toLowerCase()}</span>${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
         ${t.slips?`<span style="color:var(--rose)">↪ slipped ×${t.slips}</span>`:''}
-        ${t.done?`<span style="color:var(--lime)">+${pointsOf(t)} pts</span>`:''}${t.impact?`<span style="color:var(--amber)">★ result ${t.impact}</span>`:''}</div>
-      ${t.done&&t.proof?`<div class="proof">${linkify(t.proof)}</div>`:''}
-    </div>
-    ${ro?'':`<div class="acts">${t.done?'<button class="sm" data-a="undo">undo</button>':`<button class="sm" data-a="timer">${run?'■ stop':'▶ focus'}</button><button class="sm" data-a="del">✕</button>`}</div>`}
-    ${t.done?'<div class="stamp">SHIPPED</div>':''}
+        ${t.done?`<span class="tier t${t.tier}">${t.tier} · ${TIERNAME[t.tier]}</span>`:''}${t.impact?`<span style="color:var(--amber)">★ result ${t.impact}</span>`:''}</div>
+      ${t.done&&t.proof?`<div class="proof">${linkify(t.proof)}</div>`:''}</div>
+    ${ro?'':`<div class="acts">${t.done?'':`<button class="sm" data-a="timer">${run?'■ stop':'▶ focus'}</button><button class="sm" data-a="del" title="Drop this bet">✕</button>`}</div>`}
   </div>`;
 }
-
 function renderMe(){
   const d=dayStats(TODAY);
   $('#dateTag').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
-  ring('#ringBox',d.score);
-  $('#verdictMe').innerHTML=verdict(TODAY);
-  // carried-over tasks from earlier days
+  ring('#ringBox',d.value);$('#verdictMe').innerHTML=verdict(TODAY);
+  const full=d.planned>=MAXBETS;
+  $('#slots').textContent=`· ${d.planned}/${MAXBETS} slots`;
+  $('#addBtn').disabled=full;$('#fTitle').disabled=full;
+  $('#capMsg').textContent=full?'Three is the limit. Close or drop a bet to make room. Adding more would never earn more.':'';
   const carried=S.tasks.filter(t=>!t.done&&t.date<TODAY);
   let h='';
-  if(carried.length)h+=`<div class="tag" style="margin-bottom:8px;color:var(--rose)">Overdue — pull into today (counts as a slip)</div>`+carried.map(t=>`<div class="task" data-id="${t.id}"><span></span><div><div class="t">${esc(t.title)}</div><div class="meta"><span class="chip">${esc(t.cat)}</span><span>from ${t.date}</span></div></div><div class="acts"><button class="sm" data-a="pull">↪ pull</button><button class="sm" data-a="del">✕</button></div></div>`).join('');
-  const ts=d.ts.slice().sort((a,b)=>a.done-b.done||a.created-b.created);
-  h+=ts.length?ts.map(t=>taskHTML(t,false)).join(''):'<div class="empty">Blank page. Commit to something above.</div>';
+  if(carried.length)h+=`<div class="tag" style="margin-bottom:8px;color:var(--rose)">Unfinished from earlier days: pull in (a slip is logged) or drop</div>`+carried.map(t=>`<div class="task" data-id="${t.id}"><span></span><div><div class="t">${esc(t.title)}</div><div class="meta"><span class="chip">${esc(t.cat)}</span><span>from ${t.date}</span></div></div><div class="acts">${full?'':'<button class="sm" data-a="pull">↪ pull</button>'}<button class="sm" data-a="del">✕</button></div></div>`).join('');
+  h+=d.ts.length?d.ts.map(t=>betHTML(t,false)).join(''):'<div class="empty">Empty on purpose. Place one to three bets above.</div>';
   $('#board').innerHTML=h;
-  $('#boardCount').textContent=d.planned?`· ${d.done}/${d.planned}`:'';
+  $('#boardCount').textContent=d.planned?`· ${d.ts.filter(t=>t.done).length} closed`:'';
 }
 
 function renderPulse(){
   const d=dayStats(TODAY);
   $('#dateTag2').textContent=(S.name?S.name+' · ':'')+'TODAY, '+new Date().toLocaleDateString(undefined,{day:'numeric',month:'short'}).toUpperCase();
-  ring('#ringBox2',d.score);
-  $('#verdictPulse').innerHTML=verdict(TODAY);
-  const a=agg(7),m=agg(30),st=streak();
+  ring('#ringBox2',d.value);$('#verdictPulse').innerHTML=verdict(TODAY);
+  const a=agg(7),pc=x=>x==null?'–':Math.round(x*100)+'%';
   const kp=(l,v,dd)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${dd}</div></div>`;
   $('#kpis').innerHTML=
-    kp('Output · 7d',a.score,`avg ${Math.round(a.score/7)}/day · target ${S.target}`)+
-    kp('Delivery rate',a.rate==null?'–':Math.round(a.rate*100)+'%',`${a.done} of ${a.planned} commitments · grade ${grade(a.rate)}`)+
-    kp('Estimate honesty',a.acc==null?'–':Math.round(a.acc*100)+'%','how close time was to plan')+
-    kp('Partners touched · 7d',a.partners,'unique partners with shipped work')+
-    kp('Results sourced · 7d',a.impact,'leads / signups / meetings')+
-    kp('Focus · 7d',(a.focus/60).toFixed(1)+'h','tracked with the timer')+
-    kp('Slips · 7d',a.slips,a.slips?'tasks pushed to a later day':'nothing pushed back')+
-    kp('Streak',st+(st===1?' day':' days'),`${m.active}/30 active days`);
-  // bars
-  const r=range(7),mx=Math.max(S.target,...r.map(x=>x.score),1);
-  $('#bars').innerHTML=r.map(x=>{
-    const lbl=new Date(x.k+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'}).slice(0,2).toUpperCase();
-    return `<div class="bar ${x.k===selDay?'sel':''}" data-k="${x.k}" title="${x.k}: ${x.score} pts"><div class="col" style="height:${x.score/mx*100}%"></div><span>${lbl}</span></div>`}).join('');
-  // donut
-  const cats={};
-  range(30).forEach(x=>x.ts.filter(t=>t.done).forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+pointsOf(t)}));
+    kp('Weekly rating',grade(a.ratio),`${a.value} value · target ${S.target*5} (5 work days)`)+
+    kp('Needle days · 7d',a.needle,'days with a milestone or result')+
+    kp('Moved rate',pc(a.movedRate),'bets that changed something')+
+    kp('Forecast honesty',pc(a.hon),'forecast vs what really happened')+
+    kp('Results sourced',a.results,'leads / signups / meetings')+
+    kp('Partners moved',a.partners,'unique partners advanced')+
+    kp('Slips · 7d',a.slips,a.slips?'bets pushed to a later day':'nothing pushed back')+
+    kp('Streak',streak()+(streak()===1?' day':' days'),'days with value ≥ 1')+
+    kp('Focus · 7d',(a.focus/60).toFixed(1)+'h','context only, not scored');
+  const r=range(7);
+  $('#bars').innerHTML=r.map(x=>{const lbl=new Date(x.k+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'}).slice(0,2).toUpperCase();
+    return `<div class="bar ${x.k===selDay?'sel':''}" data-k="${x.k}" title="${x.k}: value ${x.value}"><div class="col" style="height:${x.value/9*100}%"></div><span>${lbl} ${x.value}</span></div>`}).join('');
+  const cats={};range(30).forEach(x=>x.ts.forEach(t=>{if(valueOf(t))cats[t.cat]=(cats[t.cat]||0)+valueOf(t)}));
   const ent=Object.entries(cats).sort((a,b)=>b[1]-a[1]),tot=ent.reduce((s,e)=>s+e[1],0);
   if(tot){let acc=0;const seg=ent.map((e,i)=>{const s=acc;acc+=e[1]/tot*100;return `${COL[i%COL.length]} ${s}% ${acc}%`});
     $('#donut').style.background=`conic-gradient(${seg.join(',')})`;
     $('#leg').innerHTML=ent.map((e,i)=>`<div><i style="background:${COL[i%COL.length]}"></i>${esc(e[0])} · ${Math.round(e[1]/tot*100)}%</div>`).join('');
-  }else{$('#donut').style.background='var(--panel2)';$('#leg').innerHTML='<div class="empty" style="padding:0">no shipped work yet</div>'}
-  // funnel & partner board (30d)
-  const done30=range(30).flatMap(x=>x.ts.filter(t=>t.done&&t.partner));
-  const stages=S.cats.map(c=>({c,n:new Set(done30.filter(t=>t.cat===c).map(t=>t.partner.toLowerCase())).size}));
+  }else{$('#donut').style.background='var(--panel2)';$('#leg').innerHTML='<div class="empty" style="padding:0">no value logged yet</div>'}
+  const mv=range(30).flatMap(x=>x.ts.filter(t=>t.done&&t.tier>=1&&t.partner));
+  const stages=S.cats.map(c=>({c,n:new Set(mv.filter(t=>t.cat===c).map(t=>t.partner.toLowerCase())).size}));
   const mxn=Math.max(1,...stages.map(x=>x.n));
-  $('#funnel').innerHTML=done30.length?stages.map(x=>`<div class="fun"><span>${esc(x.c)}</span><div class="b" style="width:${x.n/mxn*100}%"></div><b>${x.n}</b></div>`).join(''):'<div class="empty">Tag tasks with a partner to see the funnel.</div>';
-  const pm={};done30.forEach(t=>{const k=t.partner.toLowerCase(),o=pm[k]||(pm[k]={name:t.partner,n:0,imp:0,last:''});o.n++;o.imp+=+t.impact||0;if(t.date>o.last)o.last=t.date});
-  const pl=Object.values(pm).sort((a,b)=>b.imp-a.imp||b.n-a.n).slice(0,7);
-  $('#pboard').innerHTML=pl.length?pl.map(o=>`<div class="pb"><b>${esc(o.name)}</b><span>${o.n} touches · ★ ${o.imp}</span><span style="color:var(--mute)">${o.last.slice(5)}</span></div>`).join(''):'<div class="empty">No partner activity yet.</div>';
+  $('#funnel').innerHTML=mv.length?stages.map(x=>`<div class="fun"><span>${esc(x.c)}</span><div class="b" style="width:${x.n/mxn*100}%"></div><b>${x.n}</b></div>`).join(''):'<div class="empty">Tag bets with a partner to see the funnel.</div>';
+  const pm={};mv.forEach(t=>{const k=t.partner.toLowerCase(),o=pm[k]||(pm[k]={name:t.partner,v:0,imp:0,last:''});o.v+=t.tier;o.imp+=+t.impact||0;if(t.date>o.last)o.last=t.date});
+  const pl=Object.values(pm).sort((a,b)=>b.v-a.v||b.imp-a.imp).slice(0,7);
+  $('#pboard').innerHTML=pl.length?pl.map(o=>`<div class="pb"><b>${esc(o.name)}</b><span>value ${o.v} · ★ ${o.imp}</span><span style="color:var(--mute)">${o.last.slice(5)}</span></div>`).join(''):'<div class="empty">No partner moved yet.</div>';
   renderPipeline();
-  // heatmap
-  const weeks=17,dow=(new Date().getDay()+6)%7; // Mon=0
-  const start=addDays(TODAY,-(weeks*7-1-(6-dow)));
-  let cells='',mxs=Math.max(S.target,...S.tasks.map(t=>0),1);
-  const all=[];for(let i=0;i<weeks*7;i++){const k=addDays(start,i);all.push(k)}
-  const top=Math.max(S.target,...all.map(k=>dayStats(k).score));
-  all.forEach(k=>{
-    if(k>TODAY){cells+='<i class="f"></i>';return}
+  const weeks=17,dow=(new Date().getDay()+6)%7,start=addDays(TODAY,-(weeks*7-1-(6-dow)));
+  let cells='';
+  for(let i=0;i<weeks*7;i++){const k=addDays(start,i);
+    if(k>TODAY){cells+='<i class="f"></i>';continue}
     const x=dayStats(k);let bg='';
-    if(x.planned&&!x.done)bg='background:rgba(255,93,122,.35)';
-    else if(x.score){const p=Math.min(1,x.score/top);bg=`background:color-mix(in srgb,var(--lime) ${25+p*75}%,var(--panel2));${p>.7?'box-shadow:0 0 10px -2px var(--lime)':''}`}
-    cells+=`<i class="${k===selDay?'sel':''}" data-k="${k}" style="${bg}" title="${k} · ${x.score} pts · ${x.done}/${x.planned}"></i>`;
-  });
+    if(x.planned&&!x.value)bg='background:rgba(255,93,122,.35)';
+    else if(x.value){const p=Math.min(1,x.value/9);bg=`background:color-mix(in srgb,var(--lime) ${25+p*75}%,var(--panel2));${x.value>=6?'box-shadow:0 0 10px -2px var(--lime)':''}`}
+    cells+=`<i class="${k===selDay?'sel':''}" data-k="${k}" style="${bg}" title="${k} · value ${x.value}"></i>`}
   $('#heat').innerHTML=cells;
-  // log
   const x=dayStats(selDay);
-  $('#logTitle').textContent=`Day log · ${new Date(selDay+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})} · ${x.score} pts`;
-  $('#log').innerHTML=x.ts.length?x.ts.slice().sort((a,b)=>b.done-a.done||a.created-b.created).map(t=>taskHTML(t,true)).join(''):'<div class="empty">Nothing logged on this day — that is a signal too.</div>';
+  $('#logTitle').textContent=`Day log · ${new Date(selDay+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})} · value ${x.value}`;
+  $('#log').innerHTML=x.ts.length?x.ts.map(t=>betHTML(t,true)).join(''):'<div class="empty">No bets on this day. That is a signal too.</div>';
 }
 
-function render(){
-  document.documentElement.dataset.theme=S.theme;
-  $('#me').classList.toggle('hide',view!=='me');
-  $('#pulse').classList.toggle('hide',view!=='pulse');
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
-  $('#plist').innerHTML=[...new Set(S.tasks.map(t=>t.partner).filter(Boolean))].map(p=>`<option value="${esc(p)}">`).join('');
-  const cs=$('#fCat');cs.innerHTML=S.cats.map(c=>`<option>${esc(c)}</option>`).join('');
-  if(readonly){
-    $('#tabs').classList.add('hide');$('#share').classList.add('hide');$('#digest').classList.add('hide');$('#cfg').classList.add('hide');
-    $('#banner').classList.remove('hide');
-    $('#banner').textContent=`👀 Read-only snapshot${S.name?' of '+S.name:''}${S.snap?' · taken '+S.snap:''}. Everything you see is computed from logged tasks.`;
-    $('#me').classList.add('hide');$('#pulse').classList.remove('hide');
-  }
-  view==='me'&&!readonly?renderMe():renderPulse();
-}
-
-/* ---------- pipeline snapshot (pipeline.json, refreshed daily by a viaSocket flow) ---------- */
+/* pipeline snapshot (pipeline.json, refreshed daily by a viaSocket flow) */
 let P=null;
 function renderPipeline(){
-  const c=$('#pipeCard');
-  if(!P||!P.pipeline){c.classList.add('hide');return}
-  c.classList.remove('hide');
-  const pl=P.pipeline,o=P.outreach||{};
+  const c=$('#pipeCard');if(!P||!P.pipeline){c.classList.add('hide');return}
+  c.classList.remove('hide');const pl=P.pipeline,o=P.outreach||{};
   $('#pipeAge').textContent=P.generatedAt?'· synced '+new Date(P.generatedAt).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-  const won=(pl.byStatus||{}).Won||0;
   const kp=(l,v,d)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
-  $('#pipeKpis').innerHTML=kp('Partners in pipeline',pl.total,`${won} won · ${(pl.byStatus||{}).Lost||0} lost`)+
+  $('#pipeKpis').innerHTML=kp('Partners in pipeline',pl.total,`${(pl.byStatus||{}).Won||0} won · ${(pl.byStatus||{}).Lost||0} lost`)+
     (P.outreach?kp('UAE orgs reached',o.orgs,`${o.emailsSent} emails · ${o.linkedinConnects} LinkedIn`)+kp('Replies',o.replied,o.orgs?Math.round(o.replied/o.orgs*100)+'% reply rate':'')+kp('Meetings · MoUs',`${o.meetings} · ${o.mouSent}`,`${o.mouSigned} MoU signed`):'');
   const st=Object.entries(pl.byStage||{}).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...st.map(e=>e[1]));
   $('#pipeStages').innerHTML=st.map(([k,v])=>`<div class="fun"><span>${esc(k)}</span><div class="b" style="width:${v/mx*100}%"></div><b>${v}</b></div>`).join('');
@@ -413,88 +375,84 @@ function renderPipeline(){
 }
 fetch('pipeline.json?'+Date.now()).then(r=>r.ok?r.json():null).then(j=>{P=j;renderPipeline()},()=>{});
 
+function render(){
+  document.documentElement.dataset.theme=S.theme;
+  $('#me').classList.toggle('hide',view!=='me');$('#pulse').classList.toggle('hide',view!=='pulse');
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  $('#plist').innerHTML=[...new Set([...S.tasks.map(t=>t.partner),...((P&&P.pipeline&&P.pipeline.partners)||[]).map(p=>p.name)].filter(Boolean))].map(p=>`<option value="${esc(p)}">`).join('');
+  $('#fCat').innerHTML=S.cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  if(readonly){['#tabs','#share','#cfg','#digest'].forEach(i=>$(i).classList.add('hide'));
+    $('#banner').classList.remove('hide');$('#banner').textContent=`👀 Read-only snapshot${S.name?' of '+S.name:''}${S.snap?' · taken '+S.snap:''}. Every number is computed from logged bets and their proof.`;
+    $('#me').classList.add('hide');$('#pulse').classList.remove('hide')}
+  view==='me'&&!readonly?renderMe():renderPulse();
+}
+
 /* ---------- actions ---------- */
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)}
 const find=id=>S.tasks.find(t=>t.id===id);
-function stopTimer(t){if(t.t0){t.spent=(t.spent||0)+(Date.now()-t.t0)/1000;t.t0=null}}
+const stopTimer=t=>{if(t.t0){t.spent=(t.spent||0)+(Date.now()-t.t0)/1000;t.t0=null}};
 let pending=null;
 
 $('#addForm').onsubmit=e=>{
-  e.preventDefault();
-  S.tasks.push({id:uid(),partner:$('#fPartner').value.trim(),title:$('#fTitle').value.trim(),cat:$('#fCat').value,pts:+$('#fPts').value,est:+$('#fEst').value||30,date:TODAY,created:Date.now(),done:false,spent:0,slips:0});
+  e.preventDefault();if(dayStats(TODAY).planned>=MAXBETS)return;
+  S.tasks.push({id:uid(),partner:$('#fPartner').value.trim(),title:$('#fTitle').value.trim(),cat:$('#fCat').value,exp:+$('#fExp').value,date:TODAY,created:Date.now(),done:false,tier:0,spent:0,slips:0});
   $('#fTitle').value='';save();render();
 };
 $('#board').onclick=e=>{
-  const b=e.target.closest('[data-a]');if(!b)return;
-  const el=b.closest('.task'),t=find(el.dataset.id),a=b.dataset.a;
-  if(a==='done'){
-    if(t.done)return;
-    pending=t;stopTimer(t);$('#dlgT').textContent=t.title;$('#dlgNote').value='';$('#dlgImpact').value='';$('#dlg').showModal();
-  }
-  if(a==='undo'){t.done=false;t.proof='';save();render()}
-  if(a==='del'){if(confirm('Remove this task?')){S.tasks=S.tasks.filter(x=>x!==t);save();render()}}
+  const b=e.target.closest('[data-a]');if(!b)return;const t=find(b.closest('.task').dataset.id),a=b.dataset.a;
+  if(a==='close'&&!t.done){pending=t;stopTimer(t);$('#dlgT').textContent=t.title;$('#dlgNote').value='';$('#dlgImpact').value='';$('#dlgErr').textContent='';
+    document.querySelectorAll('input[name=tier]').forEach(r=>r.checked=false);$('#dlgImpact').classList.add('hide');$('#dlg').showModal()}
+  if(a==='del'&&confirm('Drop this bet?')){S.tasks=S.tasks.filter(x=>x!==t);save();render()}
   if(a==='pull'){t.date=TODAY;t.slips=(t.slips||0)+1;save();render();toast('Pulled in · logged as a slip')}
-  if(a==='timer'){
-    if(t.t0){stopTimer(t)}else{S.tasks.forEach(stopTimer);t.t0=Date.now()}
-    save();render();
-  }
+  if(a==='timer'){if(t.t0)stopTimer(t);else{S.tasks.forEach(stopTimer);t.t0=Date.now()}save();render()}
 };
-function finish(note){
-  if(!pending)return;pending.done=true;pending.proof=note;pending.impact=+$('#dlgImpact').value||0;pending.doneAt=Date.now();hook('task_shipped',pending);
-  const id=pending.id;pending=null;save();render();$('#dlg').close();
-  const el=document.querySelector(`[data-id="${id}"]`);el&&el.classList.add('pop');toast('Shipped ✓');
-}
-$('#dlgOk').onclick=()=>finish($('#dlgNote').value.trim());
-$('#dlgSkip').onclick=()=>finish('');
-$('#dlg').addEventListener('cancel',()=>{pending=null});
-
+$('#tiers').onchange=()=>{const v=+(document.querySelector('input[name=tier]:checked')||{}).value;$('#dlgImpact').classList.toggle('hide',v!==3)};
+$('#dlgOk').onclick=()=>{
+  const r=document.querySelector('input[name=tier]:checked');
+  if(!r){$('#dlgErr').textContent='Pick what actually changed.';return}
+  const tier=+r.value,note=$('#dlgNote').value.trim(),imp=+$('#dlgImpact').value||0;
+  if(tier>=2&&note.length<4){$('#dlgErr').textContent='Milestones and results need proof: a link or a line on what happened.';return}
+  if(tier===3&&imp<=0){$('#dlgErr').textContent='A real result needs a number above zero.';return}
+  Object.assign(pending,{done:true,tier,proof:note,impact:tier===3?imp:0,doneAt:Date.now()});
+  const id=pending.id,t=pending;pending=null;save();hook('bet_closed',t);$('#dlg').close();render();
+  const el=document.querySelector(`[data-id="${id}"]`);el&&el.classList.add('pop');toast(`Closed · value ${tier}`);
+};
+$('#dlgCancel').onclick=()=>{pending=null;$('#dlg').close()};
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){view=b.dataset.v;render()}};
-function pick(e){const k=e.target.closest('[data-k]');if(k){selDay=k.dataset.k;renderPulse()}}
+const pick=e=>{const k=e.target.closest('[data-k]');if(k){selDay=k.dataset.k;renderPulse()}};
 $('#heat').onclick=pick;$('#bars').onclick=pick;
 
 $('#share').onclick=()=>{
   const cut=addDays(TODAY,-120);
-  const snap=Object.assign({},S,{tasks:S.tasks.filter(t=>t.date>=cut).map(t=>{const c=Object.assign({},t);if(c.t0){c.spent=spentOf(t);c.t0=null}return c}),snap:new Date().toLocaleString()});
+  const snap=Object.assign({},S,{hook:'',tasks:S.tasks.filter(t=>t.date>=cut).map(t=>{const c=Object.assign({},t);if(c.t0){c.spent=spentOf(t);c.t0=null}return c}),snap:new Date().toLocaleString()});
   const url=location.href.split('#')[0]+'#share='+btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
   (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Snapshot link copied'),()=>prompt('Copy this link:',url));
 };
-$('#cfg').onclick=()=>{$('#sName').value=S.name;$('#sTarget').value=S.target;$('#sCats').value=S.cats.join(', ');$('#sHook').value=S.hook||'';$('#cfgDlg').showModal()};
-$('#cfgOk').onclick=()=>{S.name=$('#sName').value.trim();S.target=+$('#sTarget').value||60;S.hook=$('#sHook').value.trim();const c=$('#sCats').value.split(',').map(s=>s.trim()).filter(Boolean);if(c.length)S.cats=c;save();$('#cfgDlg').close();render()};
+$('#cfg').onclick=()=>{$('#sName').value=S.name;$('#sTarget').value=S.target;$('#sHook').value=S.hook||'';$('#sCats').value=S.cats.join(', ');$('#cfgDlg').showModal()};
+$('#cfgOk').onclick=()=>{S.name=$('#sName').value.trim();S.target=Math.min(9,Math.max(1,+$('#sTarget').value||5));S.hook=$('#sHook').value.trim();const c=$('#sCats').value.split(',').map(s=>s.trim()).filter(Boolean);if(c.length)S.cats=c;save();$('#cfgDlg').close();render()};
 $('#theme').onclick=()=>{S.theme=S.theme==='dark'?'light':'dark';save();render()};
-$('#wipe').onclick=()=>{if(confirm('Delete ALL tasks in this browser?')){S.tasks=[];save();$('#cfgDlg').close();render()}};
+$('#wipe').onclick=()=>{if(confirm('Delete ALL bets in this browser?')){S.tasks=[];save();$('#cfgDlg').close();render()}};
 $('#demo').onclick=()=>{
-  if(!confirm('Replace current tasks with 90 days of demo data?'))return;
-  const T=['Cold outreach batch','Intro call','Scope integration','Ship integration listing','Co-webinar plan','Partner enablement deck','Referral funnel analysis','Follow-up on pilot','Draft joint case study'],P=['Zapier','HubSpot','Notion','Razorpay','Shopify','Freshworks'];
+  if(!confirm('Replace current bets with 90 days of demo data?'))return;
+  const T=['Intro call booked','Integration scoped','Listing live','Follow-up on pilot','Joint webinar agreed','Referral link live','Enablement deck sent'],P=['Zapier','HubSpot','Notion','Razorpay','Shopify','Freshworks'];
   let r=7;const rnd=()=>(r=(r*9301+49297)%233280)/233280;S.tasks=[];
-  for(let i=90;i>=0;i--){
-    const k=addDays(TODAY,-i),wd=new Date(k+'T12:00:00').getDay();if(wd===0||(wd===6&&rnd()<.7))continue;if(rnd()<.08)continue;
-    const n=2+Math.floor(rnd()*4);
-    for(let j=0;j<n;j++){
-      const est=[15,30,45,60,90][Math.floor(rnd()*5)],done=i>0?rnd()<.8:rnd()<.5;
-      S.tasks.push({id:uid(),partner:P[Math.floor(rnd()*P.length)],impact:done&&rnd()<.4?1+Math.floor(rnd()*12):0,title:T[Math.floor(rnd()*T.length)],cat:S.cats[Math.floor(rnd()*S.cats.length)],pts:1+Math.floor(rnd()*5),est,date:k,created:Date.now()-i*864e5,done,spent:done?est*60*(.7+rnd()*.8):0,slips:rnd()<.12?1:0,proof:done&&rnd()<.6?'Merged & verified — https://example.com/pr/'+Math.floor(rnd()*900):''});
-    }
-  }
+  for(let i=90;i>=0;i--){const k=addDays(TODAY,-i),wd=new Date(k+'T12:00:00').getDay();if(wd===0||wd===6||rnd()<.1)continue;
+    const n=1+Math.floor(rnd()*3);
+    for(let j=0;j<n;j++){const exp=1+Math.floor(rnd()*3),done=i>0?rnd()<.85:rnd()<.4,tier=done?Math.min(3,Math.max(0,exp+Math.floor(rnd()*3)-1-(rnd()<.2?1:0))):0;
+      S.tasks.push({id:uid(),partner:P[Math.floor(rnd()*P.length)],title:T[Math.floor(rnd()*T.length)],cat:S.cats[Math.floor(rnd()*S.cats.length)],exp,date:k,created:Date.now()-i*864e5+j,done,tier,impact:tier===3?1+Math.floor(rnd()*12):0,spent:done?600+rnd()*3000:0,slips:rnd()<.1?1:0,proof:tier>=2?'Proof: https://example.com/p/'+Math.floor(rnd()*900):''})}}
   save();$('#cfgDlg').close();render();toast('Demo data loaded');
 };
 
-/* viaSocket bridge: posts to a webhook flow (Sheets log / Gmail digest / Slack) */
+/* viaSocket bridge: posts to a webhook flow (digest / sheet log). No task counts are sent. */
 function hook(event,t){
   if(readonly||!S.hook)return Promise.resolve(false);
   const d=dayStats(TODAY),a=agg(7);
-  const payload={event,name:S.name,date:TODAY,score:d.score,target:S.target,done:d.done,planned:d.planned,delivery7d:a.rate==null?null:Math.round(a.rate*100),results7d:a.impact,streak:streak(),
-    task:t?{title:t.title,partner:t.partner||'',type:t.cat,effort:t.pts,points:pointsOf(t),result:t.impact||0,proof:t.proof||''}:null,
-    shipped:d.ts.filter(x=>x.done).map(x=>`• ${x.title}${x.partner?' @'+x.partner:''} (${x.cat}, +${pointsOf(x)}pts${x.impact?', result '+x.impact:''})${x.proof?' — '+x.proof:''}`).join('\n')};
+  const payload={event,name:S.name,date:TODAY,value:d.value,target:S.target,topMove:d.top?d.top.title:'',weeklyRating:grade(a.ratio),needleDays7d:a.needle,results7d:a.results,streak:streak(),
+    bet:t?{title:t.title,partner:t.partner||'',motion:t.cat,forecast:t.exp,tier:t.tier,tierName:TIERNAME[t.tier],result:t.impact||0,proof:t.proof||''}:null};
   return fetch(S.hook,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)}).then(()=>true,()=>false);
 }
 $('#digest').onclick=async()=>{if(!S.hook){toast('Add your webhook URL in ⚙ first');return}toast(await hook('daily_digest')?'Digest sent':'Could not reach webhook')};
-
-/* live timer tick */
-setInterval(()=>{
-  if(readonly)return;
-  const run=S.tasks.find(t=>t.t0);if(!run)return;
-  const el=document.querySelector(`[data-id="${run.id}"] .tm`);if(el)el.textContent=fmtT(spentOf(run));
-},1000);
-
+setInterval(()=>{if(readonly)return;const run=S.tasks.find(t=>t.t0);if(!run)return;const el=document.querySelector(`[data-id="${run.id}"] .tm`);if(el)el.textContent=fmtT(spentOf(run))},1000);
 load();render();
 </script>
 </body>
