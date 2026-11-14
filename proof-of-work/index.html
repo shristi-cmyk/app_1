@@ -49,7 +49,7 @@ h2{font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:
 .kpi .v{font-family:Fraunces,serif;font-size:32px;letter-spacing:-1px}
 .kpi .l{font:600 10px 'JetBrains Mono',monospace;color:var(--mute);letter-spacing:.12em;text-transform:uppercase}
 .kpi .d{font-size:12px;color:var(--mute);margin-top:2px}
-.add{display:grid;grid-template-columns:1fr auto auto auto auto;gap:8px}
+.add{display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:8px}
 @media(max-width:760px){.add{grid-template-columns:1fr 1fr}.add input[type=text]{grid-column:1/-1}}
 input,select,textarea{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:11px 13px;font:inherit;outline:none;min-width:0}
 input:focus,select:focus,textarea:focus{border-color:var(--lime)}
@@ -91,6 +91,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--lime)}
 .donut::after{content:"";position:absolute;inset:26px;background:var(--panel);border-radius:50%}
 .leg{display:flex;flex-direction:column;gap:6px;font-size:13px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.fun{display:grid;grid-template-columns:110px 1fr 28px;gap:10px;align-items:center;margin-bottom:9px;font-size:13px}.fun div.b{height:20px;border-radius:6px;background:linear-gradient(90deg,var(--lime),var(--cyan));min-width:3px}.pb{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.pb:last-child{border:0}.pb b{font-weight:600}
 .empty{color:var(--mute);text-align:center;padding:26px 10px;font-style:italic;font-family:Fraunces,serif}
 .banner{background:linear-gradient(90deg,var(--violet),var(--cyan));color:#07060b;padding:10px 16px;border-radius:12px;font-weight:700;margin-bottom:16px;font-size:14px}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--lime);border-radius:var(--r);padding:22px;width:min(440px,92vw)}
@@ -111,13 +112,14 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
   <header>
     <div>
       <div class="logo">Proof<i> of </i>Work</div>
-      <div class="tag" id="sub">daily commitments · measurable output</div>
+      <div class="tag" id="sub">product &amp; growth partnerships · measurable output</div>
     </div>
     <div class="sp"></div>
     <div class="tabs" id="tabs">
       <button data-v="me" class="on">My Day</button>
       <button data-v="pulse">Captain View</button>
     </div>
+    <button class="ib" id="digest" title="Send today's digest to your viaSocket flow">📨 Digest</button>
     <button class="ib" id="share" title="Copy a read-only snapshot link for your manager">🔗 Share</button>
     <button class="ib" id="cfg">⚙</button>
   </header>
@@ -139,6 +141,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
       <h2>Commit to something</h2>
       <form class="add" id="addForm">
         <input type="text" id="fTitle" placeholder="What will you ship today?" required maxlength="140" autocomplete="off">
+        <input type="text" id="fPartner" placeholder="Partner" maxlength="40" list="plist" style="width:130px"><datalist id="plist"></datalist>
         <select id="fCat"></select>
         <select id="fPts" title="Effort / impact">
           <option value="1">⚡ 1 · tiny</option><option value="2">⚡ 2 · small</option><option value="3" selected>⚡ 3 · solid</option><option value="4">⚡ 4 · big</option><option value="5">⚡ 5 · critical</option>
@@ -168,6 +171,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
       <div class="card"><h2>Last 7 days · output</h2><div class="bars" id="bars"></div></div>
       <div class="card"><h2>Where the time goes · 30d</h2><div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div class="donut" id="donut"></div><div class="leg" id="leg"></div></div></div>
     </div>
+    <div class="grid cols2"><div class="card"><h2>Partner funnel · 30d <span style="text-transform:none;letter-spacing:0">(unique partners reached)</span></h2><div id="funnel"></div></div><div class="card"><h2>Partner board · 30d</h2><div id="pboard"></div></div></div>
     <div class="card"><h2>Consistency · last 17 weeks</h2><div class="heat" id="heat"></div></div>
     <div class="card"><h2 id="logTitle">Day log</h2><div id="log"></div></div>
   </section>
@@ -176,6 +180,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 <dialog id="dlg">
   <h3>Show the proof 🧾</h3>
   <p id="dlgT"></p>
+  <input type="number" id="dlgImpact" min="0" placeholder="Result: leads / signups / meetings booked (optional)" style="width:100%;margin-bottom:8px">
   <textarea id="dlgNote" placeholder="Outcome in one line, or paste a link (PR, doc, sheet, ticket…)"></textarea>
   <div class="row"><button class="btn g" id="dlgSkip">Skip proof</button><button class="btn" id="dlgOk">Mark shipped</button></div>
 </dialog>
@@ -186,6 +191,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
   <div style="display:grid;gap:10px">
     <label class="tag">Your name<input id="sName" style="width:100%;margin-top:4px"></label>
     <label class="tag">Daily target (points)<input id="sTarget" type="number" min="10" step="5" style="width:100%;margin-top:4px"></label>
+    <label class="tag">viaSocket webhook URL (optional)<input id="sHook" placeholder="https://flow.sokt.io/func/…" style="width:100%;margin-top:4px"></label>
     <label class="tag">Categories (comma separated)<input id="sCats" style="width:100%;margin-top:4px"></label>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn g" id="theme" type="button">Toggle light/dark</button>
@@ -208,7 +214,7 @@ const addDays=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);r
 const uid=()=>Math.random().toString(36).slice(2,10);
 const TODAY=dk();
 
-let S={name:'',target:60,cats:['Product','Support','Learning','Ops'],theme:'dark',tasks:[]};
+let S={name:'',target:60,cats:['Outreach','Partner call','Integration','Co-marketing','Enablement','Analysis'],hook:'',theme:'dark',tasks:[]};
 let readonly=false, view='me', selDay=TODAY;
 
 /* ---------- storage ---------- */
@@ -252,7 +258,9 @@ function agg(n){
   const acc=timed.length?timed.reduce((a,t)=>a+Math.max(0,1-Math.abs(t.spent/60-t.est)/t.est),0)/timed.length:null;
   const slips=S.tasks.filter(t=>r.some(d=>d.k===t.date)).reduce((a,t)=>a+(t.slips||0),0);
   const active=r.filter(d=>d.done).length;
-  return {planned,done,score,focus,acc,slips,active,rate:planned?done/planned:null,n};
+  const inR=S.tasks.filter(t=>t.done&&r.some(d=>d.k===t.date));
+  const impact=inR.reduce((a,t)=>a+(+t.impact||0),0),partners=new Set(inR.filter(t=>t.partner).map(t=>t.partner.toLowerCase())).size;
+  return {planned,done,score,focus,acc,slips,active,impact,partners,rate:planned?done/planned:null,n};
 }
 function grade(rate){return rate==null?'–':rate>=.9?'A':rate>=.75?'B':rate>=.5?'C':'D'}
 
@@ -282,11 +290,11 @@ function taskHTML(t,ro){
     <button class="chk" ${ro?'disabled':''} data-a="done">✓</button>
     <div>
       <div class="t">${esc(t.title)}</div>
-      <div class="meta"><span class="chip">${esc(t.cat)}</span>
+      <div class="meta"><span class="chip">${esc(t.cat)}</span>${t.partner?`<span class="chip" style="color:var(--cyan);border-color:var(--cyan)">@ ${esc(t.partner)}</span>`:''}
         <span class="pips" title="effort ${t.pts}">${[1,2,3,4,5].map(i=>`<s class="${i<=t.pts?'on':''}"></s>`).join('')}</span>
         <span>est ${t.est}m</span>${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
         ${t.slips?`<span style="color:var(--rose)">↪ slipped ×${t.slips}</span>`:''}
-        ${t.done?`<span style="color:var(--lime)">+${pointsOf(t)} pts</span>`:''}</div>
+        ${t.done?`<span style="color:var(--lime)">+${pointsOf(t)} pts</span>`:''}${t.impact?`<span style="color:var(--amber)">★ result ${t.impact}</span>`:''}</div>
       ${t.done&&t.proof?`<div class="proof">${linkify(t.proof)}</div>`:''}
     </div>
     ${ro?'':`<div class="acts">${t.done?'<button class="sm" data-a="undo">undo</button>':`<button class="sm" data-a="timer">${run?'■ stop':'▶ focus'}</button><button class="sm" data-a="del">✕</button>`}</div>`}
@@ -320,6 +328,8 @@ function renderPulse(){
     kp('Output · 7d',a.score,`avg ${Math.round(a.score/7)}/day · target ${S.target}`)+
     kp('Delivery rate',a.rate==null?'–':Math.round(a.rate*100)+'%',`${a.done} of ${a.planned} commitments · grade ${grade(a.rate)}`)+
     kp('Estimate honesty',a.acc==null?'–':Math.round(a.acc*100)+'%','how close time was to plan')+
+    kp('Partners touched · 7d',a.partners,'unique partners with shipped work')+
+    kp('Results sourced · 7d',a.impact,'leads / signups / meetings')+
     kp('Focus · 7d',(a.focus/60).toFixed(1)+'h','tracked with the timer')+
     kp('Slips · 7d',a.slips,a.slips?'tasks pushed to a later day':'nothing pushed back')+
     kp('Streak',st+(st===1?' day':' days'),`${m.active}/30 active days`);
@@ -336,6 +346,14 @@ function renderPulse(){
     $('#donut').style.background=`conic-gradient(${seg.join(',')})`;
     $('#leg').innerHTML=ent.map((e,i)=>`<div><i style="background:${COL[i%COL.length]}"></i>${esc(e[0])} · ${Math.round(e[1]/tot*100)}%</div>`).join('');
   }else{$('#donut').style.background='var(--panel2)';$('#leg').innerHTML='<div class="empty" style="padding:0">no shipped work yet</div>'}
+  // funnel & partner board (30d)
+  const done30=range(30).flatMap(x=>x.ts.filter(t=>t.done&&t.partner));
+  const stages=S.cats.map(c=>({c,n:new Set(done30.filter(t=>t.cat===c).map(t=>t.partner.toLowerCase())).size}));
+  const mxn=Math.max(1,...stages.map(x=>x.n));
+  $('#funnel').innerHTML=done30.length?stages.map(x=>`<div class="fun"><span>${esc(x.c)}</span><div class="b" style="width:${x.n/mxn*100}%"></div><b>${x.n}</b></div>`).join(''):'<div class="empty">Tag tasks with a partner to see the funnel.</div>';
+  const pm={};done30.forEach(t=>{const k=t.partner.toLowerCase(),o=pm[k]||(pm[k]={name:t.partner,n:0,imp:0,last:''});o.n++;o.imp+=+t.impact||0;if(t.date>o.last)o.last=t.date});
+  const pl=Object.values(pm).sort((a,b)=>b.imp-a.imp||b.n-a.n).slice(0,7);
+  $('#pboard').innerHTML=pl.length?pl.map(o=>`<div class="pb"><b>${esc(o.name)}</b><span>${o.n} touches · ★ ${o.imp}</span><span style="color:var(--mute)">${o.last.slice(5)}</span></div>`).join(''):'<div class="empty">No partner activity yet.</div>';
   // heatmap
   const weeks=17,dow=(new Date().getDay()+6)%7; // Mon=0
   const start=addDays(TODAY,-(weeks*7-1-(6-dow)));
@@ -361,9 +379,10 @@ function render(){
   $('#me').classList.toggle('hide',view!=='me');
   $('#pulse').classList.toggle('hide',view!=='pulse');
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  $('#plist').innerHTML=[...new Set(S.tasks.map(t=>t.partner).filter(Boolean))].map(p=>`<option value="${esc(p)}">`).join('');
   const cs=$('#fCat');cs.innerHTML=S.cats.map(c=>`<option>${esc(c)}</option>`).join('');
   if(readonly){
-    $('#tabs').classList.add('hide');$('#share').classList.add('hide');$('#cfg').classList.add('hide');
+    $('#tabs').classList.add('hide');$('#share').classList.add('hide');$('#digest').classList.add('hide');$('#cfg').classList.add('hide');
     $('#banner').classList.remove('hide');
     $('#banner').textContent=`👀 Read-only snapshot${S.name?' of '+S.name:''}${S.snap?' · taken '+S.snap:''}. Everything you see is computed from logged tasks.`;
     $('#me').classList.add('hide');$('#pulse').classList.remove('hide');
@@ -379,7 +398,7 @@ let pending=null;
 
 $('#addForm').onsubmit=e=>{
   e.preventDefault();
-  S.tasks.push({id:uid(),title:$('#fTitle').value.trim(),cat:$('#fCat').value,pts:+$('#fPts').value,est:+$('#fEst').value||30,date:TODAY,created:Date.now(),done:false,spent:0,slips:0});
+  S.tasks.push({id:uid(),partner:$('#fPartner').value.trim(),title:$('#fTitle').value.trim(),cat:$('#fCat').value,pts:+$('#fPts').value,est:+$('#fEst').value||30,date:TODAY,created:Date.now(),done:false,spent:0,slips:0});
   $('#fTitle').value='';save();render();
 };
 $('#board').onclick=e=>{
@@ -387,7 +406,7 @@ $('#board').onclick=e=>{
   const el=b.closest('.task'),t=find(el.dataset.id),a=b.dataset.a;
   if(a==='done'){
     if(t.done)return;
-    pending=t;stopTimer(t);$('#dlgT').textContent=t.title;$('#dlgNote').value='';$('#dlg').showModal();
+    pending=t;stopTimer(t);$('#dlgT').textContent=t.title;$('#dlgNote').value='';$('#dlgImpact').value='';$('#dlg').showModal();
   }
   if(a==='undo'){t.done=false;t.proof='';save();render()}
   if(a==='del'){if(confirm('Remove this task?')){S.tasks=S.tasks.filter(x=>x!==t);save();render()}}
@@ -398,7 +417,7 @@ $('#board').onclick=e=>{
   }
 };
 function finish(note){
-  if(!pending)return;pending.done=true;pending.proof=note;pending.doneAt=Date.now();
+  if(!pending)return;pending.done=true;pending.proof=note;pending.impact=+$('#dlgImpact').value||0;pending.doneAt=Date.now();hook('task_shipped',pending);
   const id=pending.id;pending=null;save();render();$('#dlg').close();
   const el=document.querySelector(`[data-id="${id}"]`);el&&el.classList.add('pop');toast('Shipped ✓');
 }
@@ -416,24 +435,35 @@ $('#share').onclick=()=>{
   const url=location.href.split('#')[0]+'#share='+btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
   (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Snapshot link copied'),()=>prompt('Copy this link:',url));
 };
-$('#cfg').onclick=()=>{$('#sName').value=S.name;$('#sTarget').value=S.target;$('#sCats').value=S.cats.join(', ');$('#cfgDlg').showModal()};
-$('#cfgOk').onclick=()=>{S.name=$('#sName').value.trim();S.target=+$('#sTarget').value||60;const c=$('#sCats').value.split(',').map(s=>s.trim()).filter(Boolean);if(c.length)S.cats=c;save();$('#cfgDlg').close();render()};
+$('#cfg').onclick=()=>{$('#sName').value=S.name;$('#sTarget').value=S.target;$('#sCats').value=S.cats.join(', ');$('#sHook').value=S.hook||'';$('#cfgDlg').showModal()};
+$('#cfgOk').onclick=()=>{S.name=$('#sName').value.trim();S.target=+$('#sTarget').value||60;S.hook=$('#sHook').value.trim();const c=$('#sCats').value.split(',').map(s=>s.trim()).filter(Boolean);if(c.length)S.cats=c;save();$('#cfgDlg').close();render()};
 $('#theme').onclick=()=>{S.theme=S.theme==='dark'?'light':'dark';save();render()};
 $('#wipe').onclick=()=>{if(confirm('Delete ALL tasks in this browser?')){S.tasks=[];save();$('#cfgDlg').close();render()}};
 $('#demo').onclick=()=>{
   if(!confirm('Replace current tasks with 90 days of demo data?'))return;
-  const T=['Fix onboarding bug','Reply to support backlog','Write release notes','Review 3 PRs','Plan sprint','Customer call prep','Refactor auth module','Update docs','Learn SQL window functions','Automate weekly report','Triage tickets','Design review'];
+  const T=['Cold outreach batch','Intro call','Scope integration','Ship integration listing','Co-webinar plan','Partner enablement deck','Referral funnel analysis','Follow-up on pilot','Draft joint case study'],P=['Zapier','HubSpot','Notion','Razorpay','Shopify','Freshworks'];
   let r=7;const rnd=()=>(r=(r*9301+49297)%233280)/233280;S.tasks=[];
   for(let i=90;i>=0;i--){
     const k=addDays(TODAY,-i),wd=new Date(k+'T12:00:00').getDay();if(wd===0||(wd===6&&rnd()<.7))continue;if(rnd()<.08)continue;
     const n=2+Math.floor(rnd()*4);
     for(let j=0;j<n;j++){
       const est=[15,30,45,60,90][Math.floor(rnd()*5)],done=i>0?rnd()<.8:rnd()<.5;
-      S.tasks.push({id:uid(),title:T[Math.floor(rnd()*T.length)],cat:S.cats[Math.floor(rnd()*S.cats.length)],pts:1+Math.floor(rnd()*5),est,date:k,created:Date.now()-i*864e5,done,spent:done?est*60*(.7+rnd()*.8):0,slips:rnd()<.12?1:0,proof:done&&rnd()<.6?'Merged & verified — https://example.com/pr/'+Math.floor(rnd()*900):''});
+      S.tasks.push({id:uid(),partner:P[Math.floor(rnd()*P.length)],impact:done&&rnd()<.4?1+Math.floor(rnd()*12):0,title:T[Math.floor(rnd()*T.length)],cat:S.cats[Math.floor(rnd()*S.cats.length)],pts:1+Math.floor(rnd()*5),est,date:k,created:Date.now()-i*864e5,done,spent:done?est*60*(.7+rnd()*.8):0,slips:rnd()<.12?1:0,proof:done&&rnd()<.6?'Merged & verified — https://example.com/pr/'+Math.floor(rnd()*900):''});
     }
   }
   save();$('#cfgDlg').close();render();toast('Demo data loaded');
 };
+
+/* viaSocket bridge: posts to a webhook flow (Sheets log / Gmail digest / Slack) */
+function hook(event,t){
+  if(readonly||!S.hook)return Promise.resolve(false);
+  const d=dayStats(TODAY),a=agg(7);
+  const payload={event,name:S.name,date:TODAY,score:d.score,target:S.target,done:d.done,planned:d.planned,delivery7d:a.rate==null?null:Math.round(a.rate*100),results7d:a.impact,streak:streak(),
+    task:t?{title:t.title,partner:t.partner||'',type:t.cat,effort:t.pts,points:pointsOf(t),result:t.impact||0,proof:t.proof||''}:null,
+    shipped:d.ts.filter(x=>x.done).map(x=>`• ${x.title}${x.partner?' @'+x.partner:''} (${x.cat}, +${pointsOf(x)}pts${x.impact?', result '+x.impact:''})${x.proof?' — '+x.proof:''}`).join('\n')};
+  return fetch(S.hook,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)}).then(()=>true,()=>false);
+}
+$('#digest').onclick=async()=>{if(!S.hook){toast('Add your webhook URL in ⚙ first');return}toast(await hook('daily_digest')?'Digest sent':'Could not reach webhook')};
 
 /* live timer tick */
 setInterval(()=>{
