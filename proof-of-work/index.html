@@ -148,6 +148,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
         <button class="btn" id="addBtn">Bet</button>
       </form>
       <div class="err" id="capMsg"></div>
+      <label class="tag" style="display:flex;gap:10px;align-items:center;margin-top:8px">Hours worked today (context only, never scored)<input id="fHours" type="number" min="0" max="16" step="0.5" style="width:80px"></label>
     </div>
 
     <div class="card">
@@ -244,7 +245,8 @@ function save(){if(readonly)return;try{localStorage.setItem(KEY,JSON.stringify(S
 
 /* ---------- measurement: value = what changed. Never a count of tasks. ---------- */
 const valueOf=t=>t.done?(t.tier||0):0;
-let LOG=[];
+let LOG=[],LOGH={};
+const hoursOf=k=>(S.hours&&S.hours[k]!=null)?S.hours[k]:(LOGH[k]||0);
 const allTasks=()=>S.tasks.concat(LOG.filter(l=>!S.tasks.some(t=>t.id===l.id)));
 function bets(k){return allTasks().filter(t=>t.date===k).sort((a,b)=>a.created-b.created).slice(0,MAXBETS)}
 function dayStats(k){
@@ -262,15 +264,15 @@ function agg(n){
     movedRate:all.length?moved.length/all.length:null,hon,
     results:closed.reduce((a,t)=>a+(+t.impact||0),0),
     partners:new Set(moved.filter(t=>t.partner).map(t=>t.partner.toLowerCase())).size,
-    focus:r.reduce((a,d)=>a+d.focus,0),slips:all.reduce((a,t)=>a+(t.slips||0),0),
+    focus:r.reduce((a,d)=>a+d.focus,0),hours:r.reduce((a,d)=>a+hoursOf(d.k),0),slips:all.reduce((a,t)=>a+(t.slips||0),0),
     ratio:value/(S.target*Math.min(n,5))};
 }
 const grade=x=>x>=1?'A':x>=.75?'B':x>=.5?'C':'D';
 
 /* ---------- views ---------- */
-function ring(id,v){
-  const pct=Math.min(1,v/S.target),R=82,C=2*Math.PI*R,over=v>S.target;
-  $(id).innerHTML=`<svg width="190" height="190"><circle cx="95" cy="95" r="${R}" fill="none" stroke="var(--panel2)" stroke-width="16"/><circle cx="95" cy="95" r="${R}" fill="none" stroke="${over?'var(--amber)':'var(--lime)'}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" style="transition:stroke-dashoffset .8s;filter:drop-shadow(0 0 8px ${over?'var(--amber)':'var(--lime)'})"/></svg><div class="c"><div><div class="big">${v}</div><div class="tag">target ${S.target}/9</div></div></div>`;
+function ring(id,v,tg,label){
+  tg=tg||S.target;const pct=Math.min(1,v/tg),R=82,C=2*Math.PI*R,over=v>tg;
+  $(id).innerHTML=`<svg width="190" height="190"><circle cx="95" cy="95" r="${R}" fill="none" stroke="var(--panel2)" stroke-width="16"/><circle cx="95" cy="95" r="${R}" fill="none" stroke="${over?'var(--amber)':'var(--lime)'}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" style="transition:stroke-dashoffset .8s;filter:drop-shadow(0 0 8px ${over?'var(--amber)':'var(--lime)'})"/></svg><div class="c"><div><div class="big">${v}</div><div class="tag">${label||('target '+S.target+'/9')}</div></div></div>`;
 }
 function verdict(k){
   const d=dayStats(k);
@@ -302,6 +304,7 @@ function renderMe(){
   const d=dayStats(TODAY);
   $('#dateTag').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
   ring('#ringBox',d.value);$('#verdictMe').innerHTML=verdict(TODAY);
+  $('#fHours').value=hoursOf(TODAY)||'';
   const full=d.planned>=MAXBETS;
   $('#slots').textContent=`· ${d.planned}/${MAXBETS} slots`;
   $('#addBtn').disabled=full;$('#fTitle').disabled=full;
@@ -317,8 +320,14 @@ function renderMe(){
 function renderPulse(){
   const d=dayStats(TODAY);
   $('#dateTag2').textContent=(S.name?S.name+' · ':'')+'TODAY, '+new Date().toLocaleDateString(undefined,{day:'numeric',month:'short'}).toUpperCase();
-  ring('#ringBox2',d.value);$('#verdictPulse').innerHTML=verdict(TODAY);
-  const a=agg(7),pc=x=>x==null?'–':Math.round(x*100)+'%';
+  const a=agg(7);
+  if(d.planned){ring('#ringBox2',d.value);$('#verdictPulse').innerHTML=verdict(TODAY)}
+  else{
+    ring('#ringBox2',a.value,S.target*5,'week · target '+S.target*5);
+    $('#dateTag2').textContent=(S.name?S.name+' · ':'')+'LAST 7 DAYS';
+    const wk=range(7).flatMap(x=>x.ts.filter(t=>t.done)).sort((x,y)=>y.tier-x.tier||y.date.localeCompare(x.date))[0];
+    $('#verdictPulse').innerHTML=`<b>${a.value} value</b> this week · rating <b>${grade(a.ratio)}</b>`+(wk?` · biggest move: <b>${esc(wk.title)}</b> (${TIERNAME[wk.tier].toLowerCase()})`:'')+` · nothing placed today yet.`}
+  const pc=x=>x==null?'–':Math.round(x*100)+'%';
   const kp=(l,v,dd)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${dd}</div></div>`;
   $('#kpis').innerHTML=
     kp('Weekly rating',grade(a.ratio),`${a.value} value · target ${S.target*5} (5 work days)`)+
@@ -329,7 +338,7 @@ function renderPulse(){
     kp('Partners moved',a.partners,'unique partners advanced')+
     kp('Slips · 7d',a.slips,a.slips?'bets pushed to a later day':'nothing pushed back')+
     kp('Streak',streak()+(streak()===1?' day':' days'),'days with value ≥ 1')+
-    kp('Focus · 7d',(a.focus/60).toFixed(1)+'h','context only, not scored');
+    kp('Hours · 7d',a.hours?a.hours+'h':'–',a.hours?`${(a.value/a.hours*8).toFixed(1)} value per 8h · context, not scored`:'log hours in My Day · never scored');
   const r=range(7);
   $('#bars').innerHTML=r.map(x=>{const lbl=new Date(x.k+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'}).slice(0,2).toUpperCase();
     return `<div class="bar ${x.k===selDay?'sel':''}" data-k="${x.k}" title="${x.k}: value ${x.value}"><div class="col" style="height:${x.value/9*100}%"></div><span>${lbl} ${x.value}</span></div>`}).join('');
@@ -357,7 +366,7 @@ function renderPulse(){
     cells+=`<i class="${k===selDay?'sel':''}" data-k="${k}" style="${bg}" title="${k} · value ${x.value}"></i>`}
   $('#heat').innerHTML=cells;
   const x=dayStats(selDay);
-  $('#logTitle').textContent=`Day log · ${new Date(selDay+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})} · value ${x.value}`;
+  $('#logTitle').textContent=`Day log · ${new Date(selDay+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})} · value ${x.value}${hoursOf(selDay)?' · '+hoursOf(selDay)+'h':''}`;
   $('#log').innerHTML=x.ts.length?x.ts.map(t=>betHTML(t,true)).join(''):'<div class="empty">No bets on this day. That is a signal too.</div>';
 }
 
@@ -375,7 +384,7 @@ function renderPipeline(){
   const eng=[...(pl.partners||[]).filter(x=>/replied|discussion|live/i.test(x.stage)).map(x=>({name:x.name,stage:x.stage,last:x.last})),...(o.engaged||[])].slice(0,10);
   $('#pipeEng').innerHTML=eng.length?eng.map(x=>`<div class="pb"><b>${esc(x.name)}</b><span>${esc(x.stage||'')}</span><span style="color:var(--mute)">${esc(x.last||'')}</span></div>`).join(''):'<div class="empty">Nothing yet.</div>';
 }
-fetch('log.json?'+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.bets){LOG=j.bets;render()}},()=>{});
+fetch('log.json?'+Date.now()).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.bets){LOG=j.bets;LOGH=j.hours||{};render()}},()=>{});
 fetch('pipeline.json?'+Date.now()).then(r=>r.ok?r.json():null).then(j=>{P=j;renderPipeline()},()=>{});
 
 function render(){
@@ -421,6 +430,7 @@ $('#dlgOk').onclick=()=>{
   const el=document.querySelector(`[data-id="${id}"]`);el&&el.classList.add('pop');toast(`Closed · value ${tier}`);
 };
 $('#dlgCancel').onclick=()=>{pending=null;$('#dlg').close()};
+$('#fHours').onchange=e=>{S.hours=S.hours||{};const v=parseFloat(e.target.value);if(v>=0)S.hours[TODAY]=Math.min(16,v);else delete S.hours[TODAY];save();toast('Hours saved')};
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){view=b.dataset.v;render()}};
 const pick=e=>{const k=e.target.closest('[data-k]');if(k){selDay=k.dataset.k;renderPulse()}};
 $('#heat').onclick=pick;$('#bars').onclick=pick;
