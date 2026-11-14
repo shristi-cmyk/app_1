@@ -172,6 +172,9 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
       <div class="card"><h2>Where the time goes · 30d</h2><div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div class="donut" id="donut"></div><div class="leg" id="leg"></div></div></div>
     </div>
     <div class="grid cols2"><div class="card"><h2>Partner funnel · 30d <span style="text-transform:none;letter-spacing:0">(unique partners reached)</span></h2><div id="funnel"></div></div><div class="card"><h2>Partner board · 30d</h2><div id="pboard"></div></div></div>
+    <div class="card hide" id="pipeCard"><h2>Live pipeline <span id="pipeAge" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="kpis" id="pipeKpis" style="margin-bottom:16px"></div>
+      <div class="grid cols2"><div><h2>Partners by stage</h2><div id="pipeStages"></div></div><div><h2>Engaged &amp; replied</h2><div id="pipeEng"></div></div></div></div>
     <div class="card"><h2>Consistency · last 17 weeks</h2><div class="heat" id="heat"></div></div>
     <div class="card"><h2 id="logTitle">Day log</h2><div id="log"></div></div>
   </section>
@@ -354,6 +357,7 @@ function renderPulse(){
   const pm={};done30.forEach(t=>{const k=t.partner.toLowerCase(),o=pm[k]||(pm[k]={name:t.partner,n:0,imp:0,last:''});o.n++;o.imp+=+t.impact||0;if(t.date>o.last)o.last=t.date});
   const pl=Object.values(pm).sort((a,b)=>b.imp-a.imp||b.n-a.n).slice(0,7);
   $('#pboard').innerHTML=pl.length?pl.map(o=>`<div class="pb"><b>${esc(o.name)}</b><span>${o.n} touches · ★ ${o.imp}</span><span style="color:var(--mute)">${o.last.slice(5)}</span></div>`).join(''):'<div class="empty">No partner activity yet.</div>';
+  renderPipeline();
   // heatmap
   const weeks=17,dow=(new Date().getDay()+6)%7; // Mon=0
   const start=addDays(TODAY,-(weeks*7-1-(6-dow)));
@@ -389,6 +393,25 @@ function render(){
   }
   view==='me'&&!readonly?renderMe():renderPulse();
 }
+
+/* ---------- pipeline snapshot (pipeline.json, refreshed daily by a viaSocket flow) ---------- */
+let P=null;
+function renderPipeline(){
+  const c=$('#pipeCard');
+  if(!P||!P.pipeline){c.classList.add('hide');return}
+  c.classList.remove('hide');
+  const pl=P.pipeline,o=P.outreach||{};
+  $('#pipeAge').textContent=P.generatedAt?'· synced '+new Date(P.generatedAt).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  const won=(pl.byStatus||{}).Won||0;
+  const kp=(l,v,d)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+  $('#pipeKpis').innerHTML=kp('Partners in pipeline',pl.total,`${won} won · ${(pl.byStatus||{}).Lost||0} lost`)+
+    (P.outreach?kp('UAE orgs reached',o.orgs,`${o.emailsSent} emails · ${o.linkedinConnects} LinkedIn`)+kp('Replies',o.replied,o.orgs?Math.round(o.replied/o.orgs*100)+'% reply rate':'')+kp('Meetings · MoUs',`${o.meetings} · ${o.mouSent}`,`${o.mouSigned} MoU signed`):'');
+  const st=Object.entries(pl.byStage||{}).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...st.map(e=>e[1]));
+  $('#pipeStages').innerHTML=st.map(([k,v])=>`<div class="fun"><span>${esc(k)}</span><div class="b" style="width:${v/mx*100}%"></div><b>${v}</b></div>`).join('');
+  const eng=[...(pl.partners||[]).filter(x=>/replied|discussion|live/i.test(x.stage)).map(x=>({name:x.name,stage:x.stage,last:x.last})),...(o.engaged||[])].slice(0,10);
+  $('#pipeEng').innerHTML=eng.length?eng.map(x=>`<div class="pb"><b>${esc(x.name)}</b><span>${esc(x.stage||'')}</span><span style="color:var(--mute)">${esc(x.last||'')}</span></div>`).join(''):'<div class="empty">Nothing yet.</div>';
+}
+fetch('pipeline.json?'+Date.now()).then(r=>r.ok?r.json():null).then(j=>{P=j;renderPipeline()},()=>{});
 
 /* ---------- actions ---------- */
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)}
