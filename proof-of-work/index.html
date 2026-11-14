@@ -155,6 +155,11 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
       <h2>Today's bets <span id="boardCount"></span></h2>
       <div id="board"></div>
     </div>
+
+    <div class="card">
+      <h2>Earlier this week</h2>
+      <div id="weekLog"></div>
+    </div>
   </section>
 
   <section id="pulse" class="grid hide">
@@ -303,7 +308,14 @@ function betHTML(t,ro){
 function renderMe(){
   const d=dayStats(TODAY);
   $('#dateTag').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
-  ring('#ringBox',d.value);$('#verdictMe').innerHTML=verdict(TODAY);
+  if(d.planned){ring('#ringBox',d.value);$('#verdictMe').innerHTML=verdict(TODAY)}
+  else{const a=agg(7);ring('#ringBox',a.value,S.target*5,'week · target '+S.target*5);$('#dateTag').textContent='LAST 7 DAYS · TODAY IS STILL EMPTY';
+    const wk=range(7).flatMap(x=>x.ts.filter(t=>t.done)).sort((x,y)=>y.tier-x.tier||y.date.localeCompare(x.date))[0];
+    $('#verdictMe').innerHTML=`<b>${a.value} value</b> this week · rating <b>${grade(a.ratio)}</b>`+(wk?` · biggest move: <b>${esc(wk.title)}</b>`:'')+'. Place today\'s bets below.'}
+  let wh='';
+  for(let i=1;i<=6;i++){const k=addDays(TODAY,-i),x=dayStats(k);if(!x.ts.length)continue;
+    wh+=`<div class="tag" style="margin:14px 0 8px">${new Date(k+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})} · value ${x.value}${hoursOf(k)?' · '+hoursOf(k)+'h':''}</div>`+x.ts.map(t=>betHTML(t,true)).join('')}
+  $('#weekLog').innerHTML=wh||'<div class="empty">Nothing logged in the last six days.</div>';
   $('#fHours').value=hoursOf(TODAY)||'';
   const full=d.planned>=MAXBETS;
   $('#slots').textContent=`· ${d.planned}/${MAXBETS} slots`;
