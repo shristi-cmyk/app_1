@@ -291,7 +291,7 @@ function betHTML(t,ro){
     <button class="chk" ${ro||t.done?'disabled':''} data-a="close" title="Close this bet">✓</button>
     <div><div class="t">${esc(t.title)}</div>
       <div class="meta"><span class="chip">${esc(t.cat)}</span>${t.partner?`<span class="chip" style="color:var(--cyan);border-color:var(--cyan)">@ ${esc(t.partner)}</span>`:''}
-        ${t.pub?'<span class="chip" style="color:var(--violet);border-color:var(--violet)">from sheet</span>':`<span>forecast: ${TIERNAME[t.exp||2].toLowerCase()}</span>`}${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
+        ${t.pub?`<span class="chip" style="color:var(--violet);border-color:var(--violet)">${t.src==='log'?'from work log':'from sheet'}</span>`:`<span>forecast: ${TIERNAME[t.exp||2].toLowerCase()}</span>`}${sp>0?`<span>⏱ <span class="tm">${fmtT(sp)}</span></span>`:''}
         ${t.slips?`<span style="color:var(--rose)">↪ slipped ×${t.slips}</span>`:''}
         ${t.done?`<span class="tier t${t.tier}">${t.tier} · ${TIERNAME[t.tier]}</span>`:''}${t.impact?`<span style="color:var(--amber)">★ result ${t.impact}</span>`:''}</div>
       ${t.done&&t.proof?`<div class="proof">${linkify(t.proof)}</div>`:''}</div>
