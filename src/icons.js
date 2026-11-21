@@ -37,12 +37,14 @@ export async function logoCandidates(domain) {
   const add = (href, score, strict = false) => { if (href && !/^data:/i.test(href) && !found.some((f) => f.href === href)) found.push({ href, score, strict }) }
   for (const m of html.matchAll(/"logo"\s*:\s*(?:"([^"]+)"|\{[^}]*?"url"\s*:\s*"([^"]+)")/gi)) add((m[1] ?? m[2]).replace(/\\\//g, '/'), 6)
   const head = html.slice(0, html.search(/<\/header>|<\/nav>/i) > 0 ? html.search(/<\/header>|<\/nav>/i) : 6000)
-  for (const [tags, bonus] of [[head.match(/<img[^>]+>/gi) ?? [], 2], [html.match(/<img[^>]+>/gi) ?? [], 0]]) {
+  // Only an image inside the header counts as the site's logo; a "logo" elsewhere on the page is usually a promo, press or badge image.
+  const elsewhere = html.slice(head.length)
+  for (const [tags, inHeader] of [[head.match(/<img[^>]+>/gi) ?? [], true], [elsewhere.match(/<img[^>]+>/gi) ?? [], false]]) {
     for (const tag of tags) {
-      if (!/logo|brand/i.test(tag)) continue
-      if (/partner|client|customer|trusted|testimonial|sponsor/i.test(tag)) continue // other companies' logos
       const src = /\bsrc=["']([^"']+)/i.exec(tag)?.[1]
-      add(src, 4 + bonus + (/\.svg(\?|$)/i.test(src ?? '') ? 1 : 0), true)
+      if (!src || !/logo|brand/i.test(tag)) continue
+      if (/partner|client|customer|trusted|testimonial|sponsor|featured|press|media|promo|hero|banner|badge|certif|iso|pci|footer|award|review|payment-?method|card/i.test(tag + src)) continue
+      add(src, inHeader ? 6 + (/\.svg(\?|$)/i.test(src) ? 1 : 0) : 2, true)
     }
   }
   for (const tag of html.match(/<link[^>]+>/gi) ?? []) {
