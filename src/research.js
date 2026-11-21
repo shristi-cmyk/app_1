@@ -110,8 +110,25 @@ export async function crawl(site) {
 const KNOWN_APPS = ['WhatsApp', 'Instagram', 'Facebook', 'Messenger', 'Telegram', 'Shopify', 'WooCommerce', 'Magento', 'BigCommerce', 'Razorpay', 'Stripe', 'PayU', 'PayPal', 'Cashfree', 'HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'LeadSquared', 'Freshdesk', 'Freshworks', 'Zendesk', 'Intercom', 'Google Sheets', 'Google Calendar', 'Google Drive', 'Gmail', 'Outlook', 'Microsoft Teams', 'Slack', 'Notion', 'Airtable', 'Calendly', 'Twilio', 'Mailchimp', 'Klaviyo', 'Jira', 'Asana', 'Trello', 'ClickUp', 'monday.com', 'Supabase', 'Postgres', 'Firebase', 'OpenAI', 'Zapier', 'Pabbly', 'n8n', 'GitHub', 'Discord', 'Zoom', 'Linear', 'Dropbox', 'Typeform', 'Google Drive', 'Google Ads', 'ActiveCampaign']
 export const mentions = (text) => KNOWN_APPS.filter((a) => new RegExp(`\\b${a.replace(/ /g, '\\s+')}\\b`, 'i').test(text))
 
+/** A brand colour from the page's own CSS variables (--primary, --brand, --accent…), inline or in up to three linked stylesheets. */
+export async function siteCssColor(html, baseUrl) {
+  const sheets = [html]
+  const links = [...String(html).matchAll(/<link[^>]+rel=["']stylesheet["'][^>]*>/gi)].map((m) => /href=["']([^"']+)/i.exec(m[0])?.[1]).filter(Boolean).slice(0, 3)
+  for (const href of links) {
+    try { const r = await fetch(new URL(href, baseUrl).href, { headers: UA, signal: AbortSignal.timeout(6000) }); if (r.ok) sheets.push((await r.text()).slice(0, 400000)) } catch { /* skip */ }
+  }
+  for (const css of sheets) {
+    for (const m of css.matchAll(/--(?:[\w-]*?)(?:primary|brand|accent|main)[\w-]*\s*:\s*(#[0-9a-f]{6}|#[0-9a-f]{3})\b/gi)) {
+      let c = m[1]; if (c.length === 4) c = '#' + [...c.slice(1)].map((x) => x + x).join('')
+      const n = parseInt(c.slice(1), 16); const sat = Math.max(n >> 16, (n >> 8) & 255, n & 255) - Math.min(n >> 16, (n >> 8) & 255, n & 255)
+      if (sat > 60) return c
+    }
+  }
+  return null
+}
+
 /** The brand colour: given, the site's theme-color, else the logo's dominant non-grey colour. */
-export async function brandColor(given, themeColor, logo) {
+export async function brandColor(given, themeColor, logo, siteColor) {
   const ok = (c) => {
     if (!c) return false
     const n = parseInt(c.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255
@@ -135,6 +152,22 @@ export async function brandColor(given, themeColor, logo) {
       const c = '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('').toUpperCase()
       if (ok(c)) return { color: c, source: 'logo' }
     }
+  }
+  // The site's own brand variable (--primary, --brand, --accent) in its CSS.
+  if (ok(siteColor)) return { color: siteColor.toUpperCase(), source: 'site stylesheet' }
+  if (logo) {
+    // A muted logo (navy, charcoal-blue): take its most common colour that still has some tint.
+    const { data, info } = await sharp(Buffer.from(logo.split(',')[1], 'base64')).resize(64, 64, { fit: 'inside' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+    const buckets = new Map()
+    for (let i = 0; i < data.length; i += info.channels) {
+      const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]]
+      if (a < 200 || Math.max(r, g, b) - Math.min(r, g, b) < 18 || Math.max(r, g, b) < 30) continue
+      const k = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4)
+      const e = buckets.get(k) ?? { n: 0, r: 0, g: 0, b: 0 }
+      e.n++; e.r += r; e.g += g; e.b += b; buckets.set(k, e)
+    }
+    const top = [...buckets.values()].sort((x, y) => y.n - x.n)[0]
+    if (top && top.n >= 8) return { color: '#' + [top.r, top.g, top.b].map((v) => Math.round(v / top.n).toString(16).padStart(2, '0')).join('').toUpperCase(), source: 'logo (muted)' }
   }
   return null
 }
@@ -285,7 +318,7 @@ export async function research({ name, domain, color, context, presenterName, ca
   let logo = isAisensy ? { data: `image/png;base64,${readFileSync(new URL('./presets/aisensy.png', import.meta.url)).toString('base64')}`, source: 'AiSensy final deck' } : null
   logo ??= await icons.resolve(name, { domain: host, kind: 'logo' })
   logo ??= await catalogLogo(name)
-  const brand = await brandColor(color ?? (isAisensy ? AISENSY_FINAL.partner.color : undefined), info.themeColor, logo?.data && dataUri(logo.data))
+  const brand = await brandColor(color ?? (isAisensy ? AISENSY_FINAL.partner.color : undefined), info.themeColor, logo?.data && dataUri(logo.data), site?.html ? await siteCssColor(site.html, site.url) : null)
 
   const missing = []
   if (!logo) missing.push({ field: 'logo', name, hint: `a logo URL for ${name}` })
