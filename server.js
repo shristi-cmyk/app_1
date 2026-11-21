@@ -77,6 +77,11 @@ app.get('/api/catalog/lookup', wrap(async (req, res) => {
   res.json({ ...(hit ? { name: hit.app.name, domain: hit.domain, matches: hit.matches, iconUrl: hit.app.iconUrl } : { found: false }), listed: ok ? ok.has(name) : null })
 }))
 
+// Read-only: which logo images the crawler finds on a site, best first (to see why it picked one).
+app.get('/api/logo-candidates', wrap(async (req, res) => {
+  const { base, found } = await icons.logoCandidates(String(req.query.domain ?? ''))
+  res.json(found.map((f) => ({ ...f, url: new URL(f.href, base).href })))
+}))
 app.get('/api/partners', (_req, res) => res.json(storedPartners()))
 app.post('/api/partner-deck', wrap(async (req, res) => res.json(await partnerDeck(req.body, req.uid))))
 

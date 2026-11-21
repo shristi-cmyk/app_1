@@ -30,7 +30,7 @@ async function fromSimpleIcons(name) {
 
 // Crawl a site for its real logo: JSON-LD logo, then <img> tags that say "logo" (header first), then apple-touch/svg/png icon
 // links. The og:image is a social-share banner, so it only counts when it is near-square.
-async function fromSite(domain) {
+export async function logoCandidates(domain) {
   const base = /^https?:/.test(domain) ? domain : `https://${domain}`
   const html = await get(base, 'text')
   const found = []
@@ -53,6 +53,11 @@ async function fromSite(domain) {
   }
   add(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)/i.exec(html)?.[1], 0)
   found.sort((x, y) => y.score - x.score)
+  return { base, found }
+}
+
+async function fromSite(domain) {
+  const { base, found } = await logoCandidates(domain)
   for (const { href, score, strict } of found) {
     try {
       const buf = await get(new URL(href, base).href)
